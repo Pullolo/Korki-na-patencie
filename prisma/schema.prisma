@@ -1,0 +1,584 @@
+// Korki na patencie — schemat bazy
+// Dokumentacja modelu: docs/PLAN.md
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enumy ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+/// Tryb prowadzenia zajęć — używany zarówno przez lokalizacje, jak i rezerwacje.
+enum LocationType {
+  ONLINE
+  TEACHER_PLACE
+  STUDENT_PLACE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+/// BLOCK — nauczyciel niedostępny mimo reguły tygodniowej.
+/// EXTRA — jednorazowe dodatkowe okienko poza siatką tygodnia.
+enum ExceptionType {
+  BLOCK
+  EXTRA
+}
+
+/// Zajęcia indywidualne rozliczamy godzinowo, grupowe — miesięcznym abonamentem.
+enum LessonFormat {
+  INDIVIDUAL
+  GROUP
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  WAITLIST
+  CANCELLED
+  FINISHED
+}
+
+enum InquiryStatus {
+  NEW
+  IN_PROGRESS
+  CLOSED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum NavMenu {
+  HEADER
+  FOOTER
+}
+
+enum NotificationType {
+  BOOKING_CREATED
+  BOOKING_CANCELLED
+  INQUIRY_CREATED
+  REVIEW_CREATED
+  SYSTEM
+}
+
+// ─── Ludzie ───────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String?  @unique
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  imageUrl  String?
+  phone     String?
+  role      UserRole @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teacherProfile TeacherProfile?
+  studentProfile StudentProfile?
+  bookings       Booking[]         @relation("BookingStudent")
+  enrollments    GroupEnrollment[]
+  reviews        Review[]
+  notifications  Notification[]
+
+  @@index([role])
+  @@map("users")
+}
+
+model TeacherProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  slug                String   @unique
+  headline            String?
+  bio                 String?
+  /// Domyślna długość pojedynczej lekcji w minutach.
+  slotMinutes         Int      @default(60)
+  /// Przerwa doliczana po lekcji przy wyliczaniu wolnych terminów.
+  bufferMinutes       Int      @default(0)
+  /// Minimalne wyprzedzenie rezerwacji (godziny).
+  minLeadHours        Int      @default(12)
+  /// Jak daleko w przyszłość można rezerwować (dni).
+  maxAdvanceDays      Int      @default(60)
+  education           String?
+  experienceYears     Int?
+  isPublished         Boolean  @default(false)
+  isAcceptingStudents Boolean  @default(true)
+  order               Int      @default(0)
+  seoTitle            String?
+  seoDescription      String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjects              TeacherSubject[]
+  locations             Location[]
+  availabilityRules     AvailabilityRule[]
+  availabilityExceptions AvailabilityException[]
+  bookings              Booking[]
+  priceRules            PriceRule[]
+  courseGroups          CourseGroup[]
+  reviews               Review[]
+  inquiries             Inquiry[]
+
+  @@map("teacher_profiles")
+}
+
+model StudentProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  levelId       String?
+  schoolName    String?
+  schoolClass   String?
+  guardianName  String?
+  guardianPhone String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level Level? @relation(fields: [levelId], references: [id], onDelete: SetNull)
+
+  @@map("student_profiles")
+}
+
+// ─── Oferta ───────────────────────────────────────────────────────────────────
+
+model Subject {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  description    String?
+  color          String?
+  icon           String?
+  isActive       Boolean  @default(true)
+  order          Int      @default(0)
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  teacherSubjects TeacherSubject[]
+  priceRules      PriceRule[]
+  courseGroups    CourseGroup[]
+  bookings        Booking[]
+  inquiries       Inquiry[]
+  reviews         Review[]
+
+  @@map("subjects")
+}
+
+model Level {
+  id       String  @id @default(cuid())
+  name     String
+  slug     String  @unique
+  order    Int     @default(0)
+  isActive Boolean @default(true)
+
+  teacherSubjects TeacherSubject[] @relation("TeacherSubjectLevels")
+  priceRules      PriceRule[]
+  courseGroups    CourseGroup[]
+  bookings        Booking[]
+  inquiries       Inquiry[]
+  studentProfiles StudentProfile[]
+
+  @@map("levels")
+}
+
+model TeacherSubject {
+  id               String   @id @default(cuid())
+  teacherProfileId String
+  subjectId        String
+  note             String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  teacherProfile TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  subject        Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  levels         Level[]        @relation("TeacherSubjectLevels")
+
+  @@unique([teacherProfileId, subjectId])
+  @@index([subjectId])
+  @@map("teacher_subjects")
+}
+
+/// Miejsce zajęć należy do konkretnego nauczyciela — każdy ma swój adres,
+/// swój zasięg dojazdu i swój link do zajęć online.
+model Location {
+  id               String       @id @default(cuid())
+  teacherProfileId String
+  name             String
+  type             LocationType @default(ONLINE)
+  /// Adres przy TEACHER_PLACE; przy STUDENT_PLACE zwykle pusty, liczy się `city`.
+  address          String?
+  city             String?
+  /// Link do spotkania (ONLINE) albo uwagi o dojeździe (STUDENT_PLACE).
+  note             String?
+  isActive         Boolean      @default(true)
+  order            Int          @default(0)
+
+  teacherProfile         TeacherProfile          @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  availabilityRules      AvailabilityRule[]
+  availabilityExceptions AvailabilityException[]
+  bookings               Booking[]
+  courseGroups           CourseGroup[]
+
+  @@index([teacherProfileId])
+  @@map("locations")
+}
+
+// ─── Cennik ───────────────────────────────────────────────────────────────────
+
+/// Cennik zajęć indywidualnych. Puste pole = reguła obejmuje wszystko:
+/// `{ level: matura }` dotyczy każdego przedmiotu i nauczyciela, a
+/// `{ level: matura, teacher: Anna }` tylko jej. Wygrywa reguła najbardziej
+/// szczegółowa — liczy to resolveHourlyPrice() w lib/pricing.ts.
+model PriceRule {
+  id               String   @id @default(cuid())
+  levelId          String?
+  subjectId        String?
+  teacherProfileId String?
+  pricePerHour     Float
+  note             String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  level          Level?          @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  subject        Subject?        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacherProfile TeacherProfile? @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+
+  @@index([levelId])
+  @@index([subjectId])
+  @@index([teacherProfileId])
+  @@map("price_rules")
+}
+
+// ─── Zajęcia grupowe ──────────────────────────────────────────────────────────
+
+/// Grupa spotyka się w stałym terminie i jest rozliczana miesięcznie,
+/// niezależnie od tego, ile spotkań wypadnie w danym miesiącu.
+model CourseGroup {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  teacherProfileId String
+  subjectId        String?
+  levelId          String?
+  description      String?
+  minSeats         Int      @default(4)
+  maxSeats         Int      @default(8)
+  /// Ile spotkań obejmuje abonament — u nas 4.
+  meetingsPerMonth Int      @default(4)
+  meetingMinutes   Int      @default(60)
+  pricePerMonth    Float
+  /// Stały termin: 1 = poniedziałek … 7 = niedziela, godzina w minutach od północy.
+  weekday          Int
+  startMin         Int
+  locationId       String?
+  startsOn         DateTime? @db.Date
+  endsOn           DateTime? @db.Date
+  isActive         Boolean   @default(true)
+  isPublished      Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  teacherProfile TeacherProfile    @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  subject        Subject?          @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  level          Level?            @relation(fields: [levelId], references: [id], onDelete: SetNull)
+  location       Location?         @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  enrollments    GroupEnrollment[]
+
+  @@index([teacherProfileId])
+  @@map("course_groups")
+}
+
+model GroupEnrollment {
+  id         String           @id @default(cuid())
+  groupId    String
+  studentId  String?
+  guestName  String?
+  guestEmail String?
+  guestPhone String?
+  status     EnrollmentStatus @default(ACTIVE)
+  /// Rabat naliczony przy zapisie, np. 20 dla ucznia zajęć indywidualnych.
+  discountPercent Float       @default(0)
+  /// Migawka ceny po rabacie — zmiana cennika nie przelicza wstecz.
+  monthlyPrice    Float
+  startedOn  DateTime         @db.Date
+  endedOn    DateTime?        @db.Date
+  note       String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  group   CourseGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  student User?       @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
+  @@unique([groupId, studentId])
+  @@index([groupId, status])
+  @@map("group_enrollments")
+}
+
+// ─── Dostępność ───────────────────────────────────────────────────────────────
+
+/// Cykliczna siatka tygodnia. Godziny trzymane jako minuty od północy,
+/// żeby porównania i przecięcia liczyły się bez strefowych niespodzianek.
+model AvailabilityRule {
+  id               String    @id @default(cuid())
+  teacherProfileId String
+  /// 1 = poniedziałek … 7 = niedziela (ISO-8601).
+  weekday          Int
+  startMin         Int
+  endMin           Int
+  locationId       String?
+  validFrom        DateTime? @db.Date
+  validTo          DateTime? @db.Date
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  teacherProfile TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  location       Location?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  @@index([teacherProfileId, weekday])
+  @@map("availability_rules")
+}
+
+/// Nadpisania konkretnego dnia. Brak godzin przy typie BLOCK = cały dzień wolny.
+model AvailabilityException {
+  id               String        @id @default(cuid())
+  teacherProfileId String
+  date             DateTime      @db.Date
+  type             ExceptionType
+  startMin         Int?
+  endMin           Int?
+  locationId       String?
+  reason           String?
+  createdAt        DateTime      @default(now())
+
+  teacherProfile TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  location       Location?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  @@index([teacherProfileId, date])
+  @@map("availability_exceptions")
+}
+
+// ─── Rezerwacje i zapytania ───────────────────────────────────────────────────
+
+model Booking {
+  id               String        @id @default(cuid())
+  reference        String        @unique
+  teacherProfileId String
+  /// Ustawione dla zalogowanego ucznia; dla gościa zostają pola guest*.
+  studentId        String?
+  guestName        String?
+  guestEmail       String?
+  guestPhone       String?
+  subjectId        String?
+  levelId          String?
+  locationId       String?
+  mode             LocationType  @default(ONLINE)
+  startsAt         DateTime
+  endsAt           DateTime
+  price            Float?
+  status           BookingStatus @default(PENDING)
+  studentNote      String?
+  internalNote     String?
+  /// Powód odrzucenia lub odwołania.
+  statusReason     String?
+  confirmedAt      DateTime?
+  cancelledAt      DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  teacherProfile TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  student        User?          @relation("BookingStudent", fields: [studentId], references: [id], onDelete: SetNull)
+  subject        Subject?       @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  level          Level?         @relation(fields: [levelId], references: [id], onDelete: SetNull)
+  location       Location?      @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  review         Review?
+
+  @@index([teacherProfileId, startsAt])
+  @@index([studentId])
+  @@index([status])
+  @@map("bookings")
+}
+
+model Inquiry {
+  id               String        @id @default(cuid())
+  name             String
+  email            String
+  phone            String?
+  subjectId        String?
+  levelId          String?
+  teacherProfileId String?
+  message          String
+  /// Preferowany termin wpisany słownie, np. „wtorki po 17".
+  preferredTerm    String?
+  status           InquiryStatus @default(NEW)
+  handledAt        DateTime?
+  createdAt        DateTime      @default(now())
+
+  subject        Subject?        @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  level          Level?          @relation(fields: [levelId], references: [id], onDelete: SetNull)
+  teacherProfile TeacherProfile? @relation(fields: [teacherProfileId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@map("inquiries")
+}
+
+model Review {
+  id               String       @id @default(cuid())
+  authorName       String
+  authorId         String?
+  teacherProfileId String?
+  subjectId        String?
+  bookingId        String?      @unique
+  rating           Int
+  content          String
+  status           ReviewStatus @default(PENDING)
+  publishedAt      DateTime?
+  createdAt        DateTime     @default(now())
+
+  author         User?           @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  teacherProfile TeacherProfile? @relation(fields: [teacherProfileId], references: [id], onDelete: SetNull)
+  subject        Subject?        @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  booking        Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@map("reviews")
+}
+
+// ─── CMS ──────────────────────────────────────────────────────────────────────
+
+model Page {
+  id             String     @id @default(cuid())
+  slug           String     @unique
+  title          String
+  /// Treść w markdownie.
+  content        String?
+  status         PageStatus @default(DRAFT)
+  seoTitle       String?
+  seoDescription String?
+  seoOgImage     String?
+  noIndex        Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@map("pages")
+}
+
+model NavLink {
+  id       String  @id @default(cuid())
+  label    String
+  href     String
+  menu     NavMenu @default(HEADER)
+  order    Int     @default(0)
+  parentId String?
+  isActive Boolean @default(true)
+
+  parent   NavLink?  @relation("NavLinkChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children NavLink[] @relation("NavLinkChildren")
+
+  @@index([menu, order])
+  @@map("nav_links")
+}
+
+model Faq {
+  id          String   @id @default(cuid())
+  question    String
+  answer      String
+  category    String?
+  order       Int      @default(0)
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("faqs")
+}
+
+/// Singleton — zawsze jeden rekord o id "settings".
+model SiteSettings {
+  id                    String   @id @default("settings")
+  siteName              String   @default("Korki na patencie")
+  tagline               String?
+  logoUrl               String?
+  contactEmail          String?
+  contactPhone          String?
+  contactAddress        String?
+  socialFacebook        String?
+  socialInstagram       String?
+  seoTitle              String?
+  seoDescription        String?
+  seoOgImage            String?
+  noIndexSite           Boolean  @default(false)
+  currency              String   @default("PLN")
+  /// Globalne reguły rezerwacji — nauczyciel może je zawęzić u siebie.
+  bookingMinLeadHours   Int      @default(12)
+  bookingMaxAdvanceDays Int      @default(60)
+  bookingAutoConfirm    Boolean  @default(false)
+  /// Rabat na zajęcia grupowe dla uczniów, którzy mają u nas zajęcia indywidualne.
+  groupDiscountPercent  Float    @default(20)
+  updatedAt             DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+// ─── Powiadomienia i statystyki ───────────────────────────────────────────────
+
+model Notification {
+  id         String           @id @default(cuid())
+  type       NotificationType
+  title      String
+  message    String?
+  link       String?
+  /// Adresat imienny; gdy pusty, liczy się targetRole.
+  userId     String?
+  targetRole UserRole?
+  read       Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([targetRole, read])
+  @@map("notifications")
+}
+
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  referrer  String?
+  sessionId String?
+  country   String?
+  device    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path])
+  @@map("page_views")
+}
