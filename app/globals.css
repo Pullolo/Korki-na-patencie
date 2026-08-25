@@ -116,6 +116,89 @@
     --sidebar-ring: oklch(0.552 0.016 285.938);
 }
 
+/* ─── Strona publiczna ────────────────────────────────────────────────────────
+   Front ma własny, stały jasny motyw — nie dziedziczy tokenów panelu i nie
+   reaguje na klasę `.dark`. Wartości są wpisane wprost, więc przełącznik motywu
+   w `/dashboard` nie ma jak ich ruszyć. */
+
+@theme inline {
+    --font-display: var(--font-fredoka);
+    --font-body: var(--font-nunito);
+
+    --color-front-ground: #fbfaff;
+    --color-front-surface: #ffffff;
+    --color-front-ink: #1a1830;
+    --color-front-muted: #5a5878;
+    --color-front-line: #e8e6f4;
+
+    --color-front-brand: #5b47e0;
+    --color-front-brand-dark: #4432c2;
+    --color-front-brand-soft: #eeebff;
+
+    --color-front-sun: #f0a500;
+    --color-front-sun-soft: #fff3d6;
+    --color-front-coral: #e0503a;
+    --color-front-coral-soft: #ffe7e2;
+    --color-front-mint: #0f9e80;
+    --color-front-mint-soft: #dff7f0;
+    --color-front-sky: #1c7fd6;
+    --color-front-sky-soft: #e3f1ff;
+}
+
+html:has([data-surface="front"]) {
+    background-color: #fbfaff;
+    scrollbar-color: #c6bff2 #f1eefc;
+}
+
+html:has([data-surface="front"]) body {
+    background-color: #fbfaff;
+    color: #1a1830;
+}
+
+[data-surface="front"] {
+    color-scheme: light;
+    caret-color: #5b47e0;
+}
+
+[data-surface="front"] ::selection {
+    background-color: #ddd7ff;
+    color: #1a1830;
+}
+
+[data-surface="front"] :focus-visible {
+    outline: 3px solid #5b47e0;
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+}
+
+/* Jedyny autorski moment ruchu na stronie: godziny wjeżdżają do siatki, kiedy
+   zmienisz przedmiot albo dzień. Reszta strony stoi spokojnie. */
+@keyframes front-slot-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.94);
+        filter: blur(3px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+        filter: blur(0);
+    }
+}
+
+[data-surface="front"] [data-slot-in] {
+    animation: front-slot-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-surface="front"] [data-slot-in] {
+        animation-duration: 0.01ms;
+    }
+    [data-surface="front"] * {
+        transition-duration: 0.01ms !important;
+    }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
