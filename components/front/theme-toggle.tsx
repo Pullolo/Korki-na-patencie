@@ -2,35 +2,30 @@
 
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
-import { useEffect, useState } from "react"
 
 // Front dzieli przełącznik motywu z panelem (`next-themes`, klasa na <html>),
 // ale ma własny, duży przycisk — dashboardowy jest skalowany pod pasek narzędzi.
+//
+// Który motyw jest aktywny, decyduje CSS przez wariant `dark:`, a nie stan
+// Reacta. Dzięki temu nie ma ani migotania przy hydratacji, ani efektu
+// ustawiającego stan po zamontowaniu.
 export function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => setMounted(true), [])
-
-  const isDark = mounted && resolvedTheme === "dark"
+  const { setTheme } = useTheme()
 
   return (
     <button
       type="button"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      aria-label={isDark ? "Włącz jasny motyw" : "Włącz ciemny motyw"}
-      title={isDark ? "Jasny motyw" : "Ciemny motyw"}
+      onClick={() =>
+        setTheme(
+          document.documentElement.classList.contains("dark") ? "light" : "dark"
+        )
+      }
+      aria-label="Przełącz motyw jasny i ciemny"
+      title="Przełącz motyw"
       className="flex size-10 items-center justify-center rounded-xl text-front-muted transition-colors duration-150 hover:bg-front-brand-soft hover:text-front-brand"
     >
-      {mounted ? (
-        isDark ? (
-          <Sun className="size-5" />
-        ) : (
-          <Moon className="size-5" />
-        )
-      ) : (
-        <span className="size-5" aria-hidden />
-      )}
+      <Moon className="size-5 dark:hidden" />
+      <Sun className="hidden size-5 dark:block" />
     </button>
   )
 }

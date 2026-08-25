@@ -23,22 +23,18 @@ export function Squiggle({ className }: { className?: string }) {
 
 export function ArrowDoodle({ className }: { className?: string }) {
   return (
-    <svg
-      aria-hidden
-      viewBox="0 0 96 64"
-      fill="none"
-      className={className}
-    >
+    <svg aria-hidden viewBox="0 0 96 64" fill="none" className={className}>
+      {/* Łuk w dół-w prawo, grot „V" zbiegający się w ostrzu na jego końcu. */}
       <path
-        d="M6 8c22 2 42 14 52 34"
+        d="M8 6c22 4 38 18 50 42"
         stroke="currentColor"
-        strokeWidth={3}
+        strokeWidth={3.5}
         strokeLinecap="round"
       />
       <path
-        d="M45 38.5c5 1.5 10 2.5 13 3.5-1.5 3-3 8-4 13"
+        d="M61 32.5 58 48l-13.5-8.5"
         stroke="currentColor"
-        strokeWidth={3}
+        strokeWidth={3.5}
         strokeLinecap="round"
         strokeLinejoin="round"
       />

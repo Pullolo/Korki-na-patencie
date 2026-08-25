@@ -73,7 +73,7 @@ const SUBJECTS = [
     name: "Matematyka",
     tone: "bg-front-brand-soft text-front-brand",
     description:
-      "Od ułamków po całki. Bieżący materiał, sprawdziany i przygotowanie do matury rozszerzonej.",
+      "Od ułamków po całki. Bieżący materiał, sprawdziany i przygotowanie do matury rozszerzonej.",
     levels: ["Podstawówka", "Liceum", "Matura", "Studia"],
     from: 80,
   },
@@ -91,7 +91,7 @@ const SUBJECTS = [
     name: "Informatyka",
     tone: "bg-front-mint-soft text-front-mint",
     description:
-      "Algorytmy, struktury danych, Python i C++. Matura, olimpiady i pierwsze lata studiów.",
+      "Algorytmy, struktury danych, Python i C++. Matura, olimpiady i pierwsze lata studiów.",
     levels: ["Liceum", "Matura", "Studia"],
     from: 100,
   },
@@ -101,17 +101,17 @@ const STEPS = [
   {
     title: "Wybierasz termin",
     description:
-      "Przedmiot, poziom i forma zajęć. Pokazujemy godziny, które są naprawdę wolne u konkretnego nauczyciela.",
+      "Przedmiot, poziom i forma zajęć. Pokazujemy godziny, które są naprawdę wolne u konkretnego nauczyciela.",
   },
   {
     title: "Potwierdzamy rezerwację",
     description:
-      "Dostajesz datę, miejsce i cenę. Nic nie płacisz z góry — rozliczamy się po zajęciach.",
+      "Dostajesz datę, miejsce i cenę. Nic nie płacisz z góry — rozliczamy się po zajęciach.",
   },
   {
     title: "Uczycie się",
     description:
-      "Pierwsza lekcja to diagnoza: co siedzi, co nie siedzi i czego brakuje. Potem plan na kolejne tygodnie.",
+      "Pierwsza lekcja to diagnoza: co siedzi, co nie siedzi i czego brakuje. Potem plan na kolejne tygodnie.",
   },
 ]
 
@@ -122,7 +122,7 @@ const TEACHERS = [
     name: "Anna Kowalska",
     tone: "bg-front-brand-soft text-front-brand",
     subjects: ["Matematyka", "Fizyka"],
-    bio: "Uczy do matury rozszerzonej od ośmiu lat. Prowadzi też grupę maturalną w czwartki.",
+    bio: "Uczy do matury rozszerzonej od ośmiu lat. Prowadzi też grupę maturalną w czwartki.",
     free: 6,
   },
   {
@@ -130,7 +130,7 @@ const TEACHERS = [
     name: "Piotr Nowak",
     tone: "bg-front-sky-soft text-front-sky",
     subjects: ["Fizyka", "Matematyka"],
-    bio: "Egzamin ósmoklasisty i liceum. Lubi zaczynać od zadań, które uczeń już prawie umie.",
+    bio: "Egzamin ósmoklasisty i liceum. Lubi zaczynać od zadań, które uczeń już prawie umie.",
     free: 4,
   },
   {
@@ -138,7 +138,7 @@ const TEACHERS = [
     name: "Marta Zielińska",
     tone: "bg-front-mint-soft text-front-mint",
     subjects: ["Informatyka"],
-    bio: "Python, C++ i algorytmy. Przygotowuje do matury rozszerzonej i olimpiady.",
+    bio: "Python, C++ i algorytmy. Przygotowuje do matury rozszerzonej i olimpiady.",
     free: 5,
   },
 ]
@@ -146,17 +146,17 @@ const TEACHERS = [
 const PRICING = [
   {
     level: "Podstawówka",
-    description: "Klasy 4–8, w tym przygotowanie do egzaminu ósmoklasisty.",
+    description: "Klasy 4–8, w tym przygotowanie do egzaminu ósmoklasisty.",
     price: 80,
   },
   {
     level: "Szkoła średnia",
-    description: "Bieżący materiał, sprawdziany i poprawa ocen w liceum oraz technikum.",
+    description: "Bieżący materiał, sprawdziany i poprawa ocen w liceum oraz technikum.",
     price: 100,
   },
   {
     level: "Matura",
-    description: "Podstawa i rozszerzenie, arkusze, powtórka całego zakresu.",
+    description: "Podstawa i rozszerzenie, arkusze, powtórka całego zakresu.",
     price: 120,
   },
 ]
@@ -165,14 +165,14 @@ const GROUPS = [
   {
     name: "Grupa ósmoklasisty",
     price: 250,
-    meta: "4 spotkania × 60 min w miesiącu",
-    points: ["Grupy 4–8 osób", "Stały termin w tygodniu", "Materiały po każdym spotkaniu"],
+    meta: "4 spotkania × 60 min w miesiącu",
+    points: ["Grupy 4–8 osób", "Stały termin w tygodniu", "Materiały po każdym spotkaniu"],
   },
   {
     name: "Grupa maturalna",
     price: 350,
-    meta: "4 spotkania × 90 min w miesiącu",
-    points: ["Grupy 4–8 osób", "Arkusze z poprzednich lat", "Powtórka całego zakresu"],
+    meta: "4 spotkania × 90 min w miesiącu",
+    points: ["Grupy 4–8 osób", "Arkusze z poprzednich lat", "Powtórka całego zakresu"],
   },
 ]
 
@@ -180,7 +180,7 @@ const GROUPS = [
 const REVIEWS = [
   {
     quote:
-      "Syn wszedł na zajęcia z jedynką ze sprawdzianu, a po dwóch miesiącach tłumaczył koledze funkcje kwadratowe.",
+      "Syn wszedł na zajęcia z jedynką ze sprawdzianu, a po dwóch miesiącach tłumaczył koledze funkcje kwadratowe.",
     author: "Anna",
     role: "mama ucznia, 2. klasa liceum",
     tone: "bg-front-brand-soft text-front-brand",
@@ -190,13 +190,13 @@ const REVIEWS = [
     quote:
       "Najbardziej pomogło to, że nie robiliśmy wszystkiego po kolei, tylko tego, co mi nie wychodziło.",
     author: "Kuba",
-    role: "matura rozszerzona z matematyki",
+    role: "matura rozszerzona z matematyki",
     tone: "bg-front-sky-soft text-front-sky",
     initials: "K",
   },
   {
     quote:
-      "Online działa u nas lepiej niż dojazdy. Tablica, zapis lekcji i zadania na kolejny tydzień w jednym miejscu.",
+      "Online działa u nas lepiej niż dojazdy. Tablica, zapis lekcji i zadania na kolejny tydzień w jednym miejscu.",
     author: "Marta",
     role: "mama ósmoklasistki",
     tone: "bg-front-mint-soft text-front-mint",
@@ -208,32 +208,32 @@ const FAQ = [
   {
     question: "Jak wygląda pierwsza lekcja?",
     answer:
-      "Sprawdzamy, gdzie naprawdę jest problem — zwykle nie tam, gdzie ostatni sprawdzian. Wychodzisz z planem na kolejne tygodnie i nie zobowiązujesz się do żadnego pakietu.",
+      "Sprawdzamy, gdzie naprawdę jest problem — zwykle nie tam, gdzie ostatni sprawdzian. Wychodzisz z planem na kolejne tygodnie i nie zobowiązujesz się do żadnego pakietu.",
   },
   {
     question: "Online czy stacjonarnie?",
     answer:
-      "Obie formy kosztują tyle samo. Online prowadzimy na tablicy, na której widać cały tok rozwiązania, a zapis zostaje u ucznia. Stacjonarnie — u nauczyciela albo z dojazdem, jeśli mieścisz się w zasięgu.",
+      "Obie formy kosztują tyle samo. Online prowadzimy na tablicy, na której widać cały tok rozwiązania, a zapis zostaje u ucznia. Stacjonarnie — u nauczyciela albo z dojazdem, jeśli mieścisz się w zasięgu.",
   },
   {
     question: "Kiedy najpóźniej mogę odwołać lekcję?",
     answer:
-      "Do 12 godzin przed terminem, bez żadnych kosztów. Później termin przepada, bo zwykle nie da się już wstawić w to miejsce nikogo innego.",
+      "Do 12 godzin przed terminem, bez żadnych kosztów. Później termin przepada, bo zwykle nie da się już wstawić w to miejsce nikogo innego.",
   },
   {
     question: "Czym różnią się zajęcia grupowe od indywidualnych?",
     answer:
-      "Grupa ma stały termin w tygodniu, 4–8 osób i rozliczenie miesięczne — wychodzi taniej, ale tempo jest wspólne. Zajęcia indywidualne idą dokładnie tam, gdzie potrzebuje uczeń.",
+      "Grupa ma stały termin w tygodniu, 4–8 osób i rozliczenie miesięczne — wychodzi taniej, ale tempo jest wspólne. Zajęcia indywidualne idą dokładnie tam, gdzie potrzebuje uczeń.",
   },
   {
     question: "Jak płacę za zajęcia?",
     answer:
-      "Po lekcji: gotówką albo przelewem. Zajęcia grupowe rozliczamy z góry za miesiąc, niezależnie od tego, ile spotkań wypada w kalendarzu.",
+      "Po lekcji: gotówką albo przelewem. Zajęcia grupowe rozliczamy z góry za miesiąc, niezależnie od tego, ile spotkań wypada w kalendarzu.",
   },
   {
     question: "Czy uczeń musi mieć konto?",
     answer:
-      "Nie. Termin można umówić bez zakładania konta — konto przydaje się tylko wtedy, gdy chcesz mieć historię lekcji w jednym miejscu.",
+      "Nie. Termin można umówić bez zakładania konta — konto przydaje się tylko wtedy, gdy chcesz mieć historię lekcji w jednym miejscu.",
   },
 ]
 
@@ -487,34 +487,34 @@ export default async function HomePage() {
               )}
             >
               {TEACHERS.map((teacher) => (
-                <article
-                  key={teacher.name}
-                  className="flex flex-wrap items-center gap-x-5 gap-y-4 p-6 sm:flex-nowrap sm:px-8"
-                >
-                  <span
-                    className={cn(
-                      "flex size-14 shrink-0 items-center justify-center rounded-2xl font-display text-xl font-semibold",
-                      teacher.tone
-                    )}
-                  >
-                    {teacher.initials}
-                  </span>
+                <article key={teacher.name} className="p-6 sm:px-8">
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+                    <span
+                      className={cn(
+                        "flex size-14 shrink-0 items-center justify-center rounded-2xl font-display text-xl font-semibold",
+                        teacher.tone
+                      )}
+                    >
+                      {teacher.initials}
+                    </span>
 
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-display text-xl font-semibold tracking-tight">
-                      {teacher.name}
-                    </h3>
-                    <p className="text-sm font-semibold text-front-muted">
-                      {teacher.subjects.join(" · ")}
-                    </p>
-                    <p className="mt-2 max-w-[62ch] leading-relaxed text-front-muted">
-                      {teacher.bio}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display text-xl font-semibold tracking-tight">
+                        {teacher.name}
+                      </h3>
+                      <p className="text-sm font-semibold text-front-muted">
+                        {teacher.subjects.join(" · ")}
+                      </p>
+                    </div>
+
+                    <p className="flex w-full shrink-0 items-center gap-2 font-semibold whitespace-nowrap sm:w-auto">
+                      <Clock3 className="size-5 text-front-mint" />
+                      {teacher.free} wolnych godzin
                     </p>
                   </div>
 
-                  <p className="flex shrink-0 items-center gap-2 font-semibold">
-                    <Clock3 className="size-5 text-front-mint" />
-                    {teacher.free} wolnych godzin w tym tygodniu
+                  <p className="mt-3 leading-relaxed text-front-muted sm:pl-19">
+                    {teacher.bio}
                   </p>
                 </article>
               ))}

@@ -259,7 +259,7 @@ chcę zająć termin: ${slot}, ${subject.minutes} min — ${price} zł.
         </a>
 
         <p className="mt-3 text-center font-body text-xs text-front-muted">
-          Godziny są przykładowe — prawdziwy grafik wchodzi z panelu nauczyciela.
+          Godziny są przykładowe — prawdziwy grafik wchodzi z panelu nauczyciela.
         </p>
       </div>
     </div>
