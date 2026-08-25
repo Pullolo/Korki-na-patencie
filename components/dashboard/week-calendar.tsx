@@ -1,18 +1,24 @@
+import { Plus } from "lucide-react"
 import Link from "next/link"
 
+import { dayRange, layoutDayEvents } from "@/lib/calendar-layout"
+import { formatTime } from "@/lib/format"
+import { BOOKING_STATUS_LABELS } from "@/lib/labels"
 import type {
   CalendarBooking,
   CalendarFreeSlot,
   CalendarGroupMeeting,
 } from "@/lib/queries/calendar"
-import { formatTime } from "@/lib/format"
-import { BOOKING_STATUS_LABELS } from "@/lib/labels"
 import { cn } from "@/lib/utils"
 
 /** Ile pikseli na minutę — 0.8 daje czytelną dobę bez przewijania w pionie. */
 const PX_PER_MIN = 0.8
 const DEFAULT_START = 8 * 60
 const DEFAULT_END = 21 * 60
+/** Najniższy czytelny kafelek — krótsza lekcja i tak dostanie tyle miejsca. */
+const MIN_EVENT_PX = 22
+/** Odstęp kafelka od krawędzi toru (odpowiednik dawnych `left-1 right-1`). */
+const EVENT_GAP_REM = 0.25
 
 const STATUS_STYLES: Record<CalendarBooking["status"], string> = {
   PENDING:
@@ -26,9 +32,10 @@ const STATUS_STYLES: Record<CalendarBooking["status"], string> = {
   CANCELLED: "border-border bg-muted text-muted-foreground",
 }
 
-function minutesOfDay(date: Date) {
-  return date.getHours() * 60 + date.getMinutes()
-}
+/** Kafelki, które dzielą kolumnę dnia i muszą się między sobą ułożyć. */
+type DayEvent =
+  | ({ kind: "group" } & CalendarGroupMeeting)
+  | ({ kind: "booking" } & CalendarBooking)
 
 function sameDay(a: Date, b: Date) {
   return (
@@ -44,6 +51,7 @@ export function WeekCalendar({
   freeSlots,
   groupMeetings,
   showTeacher,
+  slotHref,
 }: {
   weekStart: Date
   bookings: CalendarBooking[]
@@ -51,6 +59,11 @@ export function WeekCalendar({
   groupMeetings: CalendarGroupMeeting[]
   /** Widok „wszyscy nauczyciele" — wtedy na kafelku pokazujemy, czyja to lekcja. */
   showTeacher?: boolean
+  /**
+   * Gdy podane, wolne okienko staje się skrótem do zapisania lekcji o tej porze.
+   * Bez tego (widok wszystkich nauczycieli) zostaje samym tłem.
+   */
+  slotHref?: (slot: CalendarFreeSlot) => string
 }) {
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(weekStart)
@@ -59,16 +72,12 @@ export function WeekCalendar({
   })
 
   // Siatka rozciąga się tylko tyle, ile trzeba, ale nie węziej niż 8:00–21:00.
-  const marks = [
-    ...bookings.flatMap((b) => [
-      minutesOfDay(b.startsAt),
-      minutesOfDay(b.endsAt),
-    ]),
-    ...freeSlots.flatMap((s) => [
-      minutesOfDay(s.startsAt),
-      minutesOfDay(s.endsAt),
-    ]),
-  ]
+  const marks = [...bookings, ...groupMeetings, ...freeSlots].flatMap(
+    (item) => {
+      const { startMin, endMin } = dayRange(item)
+      return [startMin, endMin]
+    }
+  )
   const startMin = Math.min(DEFAULT_START, ...marks.map((m) => m))
   const endMin = Math.max(DEFAULT_END, ...marks.map((m) => m))
   const gridStart = Math.floor(startMin / 60) * 60
@@ -148,12 +157,18 @@ export function WeekCalendar({
           </div>
 
           {days.map((day) => {
-            const dayGroups = groupMeetings.filter((g) =>
-              sameDay(g.startsAt, day)
-            )
-            const dayBookings = bookings.filter((b) => sameDay(b.startsAt, day))
             const daySlots = freeSlots.filter((s) => sameDay(s.startsAt, day))
             const isToday = sameDay(day, today)
+            // Grupy i lekcje dzielą tę samą kolumnę, więc tory liczymy dla nich
+            // razem — inaczej lekcja w godzinach grupy zasłoniłaby spotkanie.
+            const events = layoutDayEvents<DayEvent>([
+              ...groupMeetings
+                .filter((meeting) => sameDay(meeting.startsAt, day))
+                .map((meeting) => ({ kind: "group" as const, ...meeting })),
+              ...bookings
+                .filter((booking) => sameDay(booking.startsAt, day))
+                .map((booking) => ({ kind: "booking" as const, ...booking })),
+            ])
 
             return (
               <div
@@ -163,80 +178,111 @@ export function WeekCalendar({
                   isToday && "bg-primary/5"
                 )}
               >
-                {daySlots.map((slot) => (
-                  <div
-                    key={`slot-${slot.startsAt.toISOString()}`}
-                    className="absolute right-1 left-1 rounded-md border border-dashed border-border bg-card/40"
-                    style={{
-                      top:
-                        (minutesOfDay(slot.startsAt) - gridStart) * PX_PER_MIN,
-                      height:
-                        (minutesOfDay(slot.endsAt) -
-                          minutesOfDay(slot.startsAt)) *
-                        PX_PER_MIN,
-                    }}
-                    title={`Wolne: ${formatTime(slot.startsAt)}–${formatTime(slot.endsAt)}`}
-                  />
-                ))}
+                {daySlots.map((slot) => {
+                  const { startMin, endMin } = dayRange(slot)
+                  const style = {
+                    top: (startMin - gridStart) * PX_PER_MIN,
+                    height: (endMin - startMin) * PX_PER_MIN,
+                  }
+                  const label = `${formatTime(slot.startsAt)}–${formatTime(slot.endsAt)}`
+                  const key = `slot-${slot.startsAt.toISOString()}`
+                  const base =
+                    "absolute right-1 left-1 rounded-md border border-dashed border-border bg-card/40"
 
-                {dayGroups.map((meeting) => (
-                  <div
-                    key={`group-${meeting.id}-${meeting.startsAt.toISOString()}`}
-                    className="absolute right-1 left-1 overflow-hidden rounded-md border border-violet-500/40 bg-violet-500/15 px-1.5 py-1 text-violet-800 dark:text-violet-200"
-                    style={{
-                      top:
-                        (minutesOfDay(meeting.startsAt) - gridStart) *
-                        PX_PER_MIN,
-                      height: Math.max(
-                        (minutesOfDay(meeting.endsAt) -
-                          minutesOfDay(meeting.startsAt)) *
-                          PX_PER_MIN,
-                        22
-                      ),
-                    }}
-                    title={`${formatTime(meeting.startsAt)}–${formatTime(meeting.endsAt)} · ${meeting.name} · ${meeting.seats}/${meeting.maxSeats} miejsc`}
-                  >
-                    <p className="truncate text-[11px] leading-tight font-semibold">
-                      {formatTime(meeting.startsAt)} {meeting.name}
-                    </p>
-                    <p className="truncate text-[10px] leading-tight opacity-80">
-                      grupa · {meeting.seats}/{meeting.maxSeats}
-                      {showTeacher && ` · ${meeting.teacherName}`}
-                    </p>
-                  </div>
-                ))}
+                  if (!slotHref) {
+                    return (
+                      <div
+                        key={key}
+                        className={base}
+                        style={style}
+                        title={`Wolne: ${label}`}
+                      />
+                    )
+                  }
 
-                {dayBookings.map((booking) => (
-                  <Link
-                    key={booking.id}
-                    href={`/dashboard/rezerwacje/${booking.id}`}
-                    className={cn(
-                      "absolute right-1 left-1 overflow-hidden rounded-md border px-1.5 py-1 transition-shadow hover:shadow-sm",
-                      STATUS_STYLES[booking.status]
-                    )}
-                    style={{
-                      top:
-                        (minutesOfDay(booking.startsAt) - gridStart) *
-                        PX_PER_MIN,
-                      height: Math.max(
-                        (minutesOfDay(booking.endsAt) -
-                          minutesOfDay(booking.startsAt)) *
-                          PX_PER_MIN,
-                        22
-                      ),
-                    }}
-                    title={`${formatTime(booking.startsAt)}–${formatTime(booking.endsAt)} · ${booking.studentName} · ${BOOKING_STATUS_LABELS[booking.status]}`}
-                  >
-                    <p className="truncate text-[11px] leading-tight font-semibold">
-                      {formatTime(booking.startsAt)} {booking.studentName}
-                    </p>
-                    <p className="truncate text-[10px] leading-tight opacity-80">
-                      {showTeacher
-                        ? booking.teacherName
-                        : (booking.subjectName ?? "bez przedmiotu")}
-                    </p>
-                  </Link>
-                ))}
+                  return (
+                    <Link
+                      key={key}
+                      href={slotHref(slot)}
+                      className={cn(
+                        base,
+                        "group flex items-center justify-center transition-colors hover:border-primary/60 hover:bg-primary/10"
+                      )}
+                      style={style}
+                      title={`Zapisz lekcję: ${label}`}
+                    >
+                      <Plus className="size-3.5 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
+                    </Link>
+                  )
+                })}
+
+                {events.map(({ item, startMin, endMin, lane, lanes }) => {
+                  const position = {
+                    top: (startMin - gridStart) * PX_PER_MIN,
+                    height: Math.max(
+                      (endMin - startMin) * PX_PER_MIN,
+                      MIN_EVENT_PX
+                    ),
+                    // Nachodzące na siebie kafelki dzielą szerokość kolumny po równo.
+                    left: `calc(${(lane * 100) / lanes}% + ${EVENT_GAP_REM}rem)`,
+                    width: `calc(${100 / lanes}% - ${2 * EVENT_GAP_REM}rem)`,
+                  }
+                  const box = cn(
+                    "absolute overflow-hidden rounded-md border py-1",
+                    lanes > 1 ? "px-1" : "px-1.5"
+                  )
+                  // Na wąskim torze godzina zjadłaby całą linijkę — zostaje
+                  // pozycja w siatce i podpowiedź pod kursorem.
+                  const time =
+                    lanes === 1 ? `${formatTime(item.startsAt)} ` : ""
+
+                  if (item.kind === "group") {
+                    return (
+                      <div
+                        key={`group-${item.id}-${item.startsAt.toISOString()}`}
+                        className={cn(
+                          box,
+                          "border-violet-500/40 bg-violet-500/15 text-violet-800 dark:text-violet-200"
+                        )}
+                        style={position}
+                        title={`${formatTime(item.startsAt)}–${formatTime(item.endsAt)} · ${item.name} · ${item.seats}/${item.maxSeats} miejsc`}
+                      >
+                        <p className="truncate text-[11px] leading-tight font-semibold">
+                          {time}
+                          {item.name}
+                        </p>
+                        <p className="truncate text-[10px] leading-tight opacity-80">
+                          grupa · {item.seats}/{item.maxSeats}
+                          {showTeacher && ` · ${item.teacherName}`}
+                        </p>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <Link
+                      key={`booking-${item.id}`}
+                      href={`/dashboard/rezerwacje/${item.id}`}
+                      className={cn(
+                        box,
+                        "transition-shadow hover:shadow-sm",
+                        STATUS_STYLES[item.status]
+                      )}
+                      style={position}
+                      title={`${formatTime(item.startsAt)}–${formatTime(item.endsAt)} · ${item.studentName} · ${BOOKING_STATUS_LABELS[item.status]}`}
+                    >
+                      <p className="truncate text-[11px] leading-tight font-semibold">
+                        {time}
+                        {item.studentName}
+                      </p>
+                      <p className="truncate text-[10px] leading-tight opacity-80">
+                        {showTeacher
+                          ? item.teacherName
+                          : (item.subjectName ?? "bez przedmiotu")}
+                      </p>
+                    </Link>
+                  )
+                })}
               </div>
             )
           })}

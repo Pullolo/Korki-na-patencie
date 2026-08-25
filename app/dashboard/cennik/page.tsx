@@ -7,7 +7,13 @@ import { EmptyState, Panel } from "@/components/dashboard/panel"
 import { PriceRulesTable } from "@/components/dashboard/pricing/price-rules-table"
 import { StatusBadge } from "@/components/dashboard/status-badge"
 import { ensureAdminPage } from "@/lib/auth"
-import { formatPrice, minutesToTime, plural, WEEKDAYS } from "@/lib/format"
+import {
+  formatPrice,
+  minutesToTime,
+  personName,
+  plural,
+  WEEKDAYS,
+} from "@/lib/format"
 import { groupHourlyEquivalent } from "@/lib/pricing"
 import { getTeacherOptions } from "@/lib/queries/availability"
 import { getLevels, getSubjects } from "@/lib/queries/catalog"
@@ -88,10 +94,7 @@ export default async function PricingPage() {
             }))}
             teachers={teachers.map((teacher) => ({
               id: teacher.id,
-              name:
-                [teacher.user.firstName, teacher.user.lastName]
-                  .filter(Boolean)
-                  .join(" ") || teacher.user.email,
+              name: personName(teacher.user),
             }))}
           />
         </Panel>

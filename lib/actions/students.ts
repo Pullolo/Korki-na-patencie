@@ -5,6 +5,57 @@ import { revalidatePath } from "next/cache"
 import { requireDashboardUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+export type StudentMatch = {
+  id: string
+  firstName: string | null
+  lastName: string | null
+  email: string | null
+  phone: string | null
+}
+
+/**
+ * Podpowiedzi do pola „Uczeń" przy ręcznym zapisie lekcji. Nauczyciel widzi
+ * tylko osoby, które już u niego były — pełną listę ma admin. Duplikatom przy
+ * ponownym telefonie zapobiega i tak `createBooking()`, dopasowując po mailu
+ * i telefonie, więc zawężenie listy niczego nie psuje.
+ */
+export async function searchStudents(query: string): Promise<StudentMatch[]> {
+  const ctx = await requireDashboardUser()
+  const terms = query.trim().split(/\s+/).filter(Boolean)
+  if (terms.length === 0 || query.trim().length < 2) return []
+
+  return prisma.user.findMany({
+    where: {
+      role: "STUDENT",
+      ...(ctx.isAdmin
+        ? {}
+        : {
+            bookings: {
+              some: { teacherProfileId: ctx.teacherProfileId ?? "__brak__" },
+            },
+          }),
+      // Każde słowo musi trafić w któreś z pól — „Jan Kow" znajdzie Jana Kowalskiego.
+      AND: terms.map((term) => ({
+        OR: [
+          { firstName: { contains: term, mode: "insensitive" as const } },
+          { lastName: { contains: term, mode: "insensitive" as const } },
+          { email: { contains: term, mode: "insensitive" as const } },
+          { phone: { contains: term } },
+        ],
+      })),
+    },
+    orderBy: { createdAt: "desc" },
+    take: 8,
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phone: true,
+    },
+  })
+}
+
 export type StudentProfileInput = {
   levelId: string | null
   schoolName: string | null

@@ -10,7 +10,7 @@ import {
   TeacherPicker,
 } from "@/components/dashboard/teacher-picker"
 import { ensureDashboardPage } from "@/lib/auth"
-import { plural } from "@/lib/format"
+import { personName, plural } from "@/lib/format"
 import { getTeacherOptions } from "@/lib/queries/availability"
 import { getLevels, getSubjects } from "@/lib/queries/catalog"
 import { getCourseGroups, seatsTaken } from "@/lib/queries/groups"
@@ -18,14 +18,6 @@ import { getStudents, getTeacherProfile } from "@/lib/queries/people"
 import { getSiteSettingsSafe } from "@/lib/queries/settings"
 
 export const metadata: Metadata = { title: "Grupy" }
-
-function personName(user: {
-  firstName: string | null
-  lastName: string | null
-  email: string
-}) {
-  return [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email
-}
 
 export default async function GroupsPage({
   searchParams,
@@ -71,9 +63,7 @@ export default async function GroupsPage({
 
   const studentOptions = students.map((student) => ({
     id: student.id,
-    name:
-      [student.firstName, student.lastName].filter(Boolean).join(" ") ||
-      student.email,
+    name: personName(student),
   }))
 
   const totalSeats = groups.reduce((sum, group) => sum + seatsTaken(group), 0)
@@ -139,10 +129,7 @@ export default async function GroupsPage({
                   locationId: group.locationId,
                   isActive: group.isActive,
                   isPublished: group.isPublished,
-                  teacherName: personName({
-                    ...group.teacherProfile.user,
-                    email: "",
-                  }),
+                  teacherName: personName(group.teacherProfile.user),
                   subjectName: group.subject?.name ?? null,
                   levelName: group.level?.name ?? null,
                   locationName: group.location?.name ?? null,
@@ -153,12 +140,7 @@ export default async function GroupsPage({
                     discountPercent: enrollment.discountPercent,
                     note: enrollment.note,
                     name: enrollment.student
-                      ? [
-                          enrollment.student.firstName,
-                          enrollment.student.lastName,
-                        ]
-                          .filter(Boolean)
-                          .join(" ") || enrollment.student.email
+                      ? personName(enrollment.student)
                       : (enrollment.guestName ?? "Gość"),
                   })),
                 }}

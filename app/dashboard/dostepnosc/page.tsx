@@ -9,7 +9,12 @@ import { Header } from "@/components/dashboard/header"
 import { EmptyState, Panel } from "@/components/dashboard/panel"
 import { ensureDashboardPage } from "@/lib/auth"
 import { dateOnlyKey } from "@/lib/dates"
-import { formatLongDate, formatTime, plural } from "@/lib/format"
+import {
+  formatLongDate,
+  formatTime,
+  personName,
+  plural,
+} from "@/lib/format"
 import {
   getAvailabilityPreview,
   getTeacherOptions,
@@ -19,14 +24,6 @@ import {
 export const metadata: Metadata = { title: "Moja dostępność" }
 
 const PREVIEW_DAYS = 14
-
-function personName(user: {
-  firstName: string | null
-  lastName: string | null
-  email: string
-}) {
-  return [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email
-}
 
 export default async function AvailabilityPage({
   searchParams,

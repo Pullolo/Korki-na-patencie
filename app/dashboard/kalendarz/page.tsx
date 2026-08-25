@@ -2,6 +2,7 @@ import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { CreateBooking } from "@/components/dashboard/bookings/create-booking"
 import { Header } from "@/components/dashboard/header"
 import { EmptyState, Panel } from "@/components/dashboard/panel"
 import {
@@ -14,24 +15,27 @@ import {
 } from "@/components/dashboard/week-calendar"
 import { ensureDashboardPage } from "@/lib/auth"
 import { dayKey } from "@/lib/dates"
-import { plural } from "@/lib/format"
+import { formatTime, personName, plural } from "@/lib/format"
 import { getTeacherOptions } from "@/lib/queries/availability"
+import { getBookingFormOptions } from "@/lib/queries/bookings"
 import { getWeekSchedule, weekStartFor } from "@/lib/queries/calendar"
+import { getSiteSettingsSafe } from "@/lib/queries/settings"
 
 export const metadata: Metadata = { title: "Kalendarz" }
-
-function personName(user: {
-  firstName: string | null
-  lastName: string | null
-  email: string
-}) {
-  return [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email
-}
 
 function shiftWeek(weekStart: Date, weeks: number) {
   const shifted = new Date(weekStart)
   shifted.setDate(shifted.getDate() + weeks * 7)
   return dayKey(shifted)
+}
+
+/** „2026-08-26T17:00" z kliknięcia w wolne okienko → data i godzina formularza. */
+function parseNewLesson(value: string | string[] | undefined) {
+  if (typeof value !== "string") return null
+  const [date, time] = value.split("T")
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date ?? "")) return null
+  if (!/^\d{2}:\d{2}$/.test(time ?? "")) return null
+  return { date, time }
 }
 
 function parseWeek(value: string | string[] | undefined) {
@@ -47,6 +51,7 @@ export default async function CalendarPage({
   searchParams: Promise<{
     tydzien?: string | string[]
     nauczyciel?: string | string[]
+    nowa?: string | string[]
   }>
 }) {
   const ctx = await ensureDashboardPage()
@@ -83,21 +88,36 @@ export default async function CalendarPage({
     )
   }
 
-  const { bookings, freeSlots, groupMeetings } = await getWeekSchedule(
-    teacherProfileId,
-    weekStart
-  ).catch(() => ({ bookings: [], freeSlots: [], groupMeetings: [] }))
+  const [schedule, formOptions, settings] = await Promise.all([
+    getWeekSchedule(teacherProfileId, weekStart).catch(() => ({
+      bookings: [],
+      freeSlots: [],
+      groupMeetings: [],
+    })),
+    getBookingFormOptions(ctx).catch(() => null),
+    getSiteSettingsSafe(),
+  ])
+  const { bookings, freeSlots, groupMeetings } = schedule
+  const newLesson = parseNewLesson(params.nowa)
 
   const weekEnd = new Date(weekStart)
   weekEnd.setDate(weekEnd.getDate() + 6)
 
   const rangeLabel = `${weekStart.toLocaleDateString("pl-PL", { day: "numeric", month: "long" })} – ${weekEnd.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}`
 
-  const navParams = (week: string) => {
-    const search = new URLSearchParams({ tydzien: week })
+  const navParams = (week: string, extra?: Record<string, string>) => {
+    const search = new URLSearchParams({ tydzien: week, ...extra })
     if (ctx.isAdmin) search.set("nauczyciel", selectedId)
     return `/dashboard/kalendarz?${search.toString()}`
   }
+
+  const weekHref = navParams(dayKey(weekStart))
+  // Klik w wolne okienko wraca na tę samą stronę z terminem w adresie —
+  // formularz otwiera się już wypełniony, bez przeładowania stanu w kliencie.
+  const slotHref = (slot: { startsAt: Date }) =>
+    navParams(dayKey(weekStart), {
+      nowa: `${dayKey(slot.startsAt)}T${formatTime(slot.startsAt)}`,
+    })
 
   return (
     <div className="flex w-full min-w-0 flex-col">
@@ -159,6 +179,19 @@ export default async function CalendarPage({
           />
         </div>
 
+        {formOptions && (
+          <CreateBooking
+            key={params.nowa?.toString() ?? "nowa"}
+            options={formOptions}
+            currency={settings.currency}
+            defaultTeacherId={teacherProfileId}
+            initialDate={newLesson?.date}
+            initialTime={newLesson?.time}
+            autoOpen={Boolean(newLesson)}
+            closeHref={weekHref}
+          />
+        )}
+
         <Panel bodyClassName="p-0 sm:p-0">
           {bookings.length === 0 &&
           freeSlots.length === 0 &&
@@ -179,6 +212,7 @@ export default async function CalendarPage({
               freeSlots={freeSlots}
               groupMeetings={groupMeetings}
               showTeacher={!teacherProfileId}
+              slotHref={teacherProfileId ? slotHref : undefined}
             />
           )}
         </Panel>

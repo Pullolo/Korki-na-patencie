@@ -38,6 +38,10 @@ Ochrona dwuwarstwowa:
 ### Ludzie
 
 - **User** — `clerkId`, email, imię/nazwisko, avatar, telefon, `role`, timestampy.
+  `clerkId` i `email` są opcjonalne: ucznia umówionego przez telefon zakłada nauczyciel
+  w panelu i taka osoba nie ma konta ani (często) adresu e-mail. Gdy zarejestruje się
+  później na ten sam mail, `ensureUserSynced()` dopina `clerkId` do istniejącego wiersza,
+  więc historia lekcji zostaje przy niej zamiast trafić do duplikatu.
 - **TeacherProfile** — 1:1 z User. `slug`, nagłówek, bio, stawka bazowa, `slotMinutes` (domyślna długość lekcji),
   `bufferMinutes` (przerwa między lekcjami), doświadczenie, wykształcenie, `isPublished`, `isAcceptingStudents`,
   kolejność na liście, pola SEO.
@@ -113,6 +117,18 @@ Cała logika w jednym miejscu: `lib/availability.ts`.
   Statusy: `PENDING` → `CONFIRMED` / `REJECTED` → `COMPLETED` / `CANCELLED` / `NO_SHOW`.
   Indeks na (`teacherProfileId`, `startsAt`) — po tym liczona jest kolizja terminów.
 - **Inquiry** — zapytanie z formularza kontaktowego (bez blokowania terminu): `NEW` / `IN_PROGRESS` / `CLOSED`.
+
+**Ręczny zapis z panelu.** `createBooking()` (`lib/actions/booking-create.ts`) wpisuje lekcję
+ustaloną poza serwisem — np. przez telefon. Uczeń bierze się z podpowiedzi albo powstaje jako
+nowy `User` bez konta; przed założeniem sprawdzamy mail i telefon, żeby druga rozmowa nie
+zrobiła duplikatu. Taka rezerwacja jest domyślnie od razu `CONFIRMED` i nie obowiązują jej
+`minLeadHours` ani `maxAdvanceDays` (to reguły dla ucznia rezerwującego samodzielnie),
+ale kolizję terminu trzeba świadomie pominąć. Wolne okienko w kalendarzu jest skrótem do
+tego formularza — klik podstawia datę i godzinę przez parametr `?nowa=`.
+
+**Kolizje w jednym miejscu.** `findScheduleConflicts()` (`lib/conflicts.ts`) pyta naraz
+o rezerwacje i o spotkania grup — używa go i ręczny zapis, i potwierdzanie rezerwacji.
+Sam SQL po tabeli `bookings` przepuściłby lekcję w godzinach grupy.
 
 ### CMS i reszta
 

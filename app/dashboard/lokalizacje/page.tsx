@@ -5,7 +5,7 @@ import { Header } from "@/components/dashboard/header"
 import { LocationsManager } from "@/components/dashboard/catalog/locations-manager"
 import { EmptyState, Panel } from "@/components/dashboard/panel"
 import { ensureDashboardPage } from "@/lib/auth"
-import { plural } from "@/lib/format"
+import { personName, plural } from "@/lib/format"
 import { getLocationsByTeacher } from "@/lib/queries/catalog"
 
 export const metadata: Metadata = { title: "Lokalizacje" }
@@ -49,10 +49,7 @@ export default async function LocationsPage() {
           </Panel>
         ) : (
           teachers.map((teacher) => {
-            const name =
-              [teacher.user.firstName, teacher.user.lastName]
-                .filter(Boolean)
-                .join(" ") || teacher.user.email
+            const name = personName(teacher.user)
 
             return (
               <Panel

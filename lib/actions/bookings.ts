@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 
 import { requireTeacherAccess } from "@/lib/auth"
+import { conflictMessage, findScheduleConflicts } from "@/lib/conflicts"
 import { prisma } from "@/lib/prisma"
 
 async function loadBookingForUpdate(bookingId: string) {
@@ -33,22 +34,15 @@ export async function confirmBooking(bookingId: string) {
   const booking = await loadBookingForUpdate(bookingId)
 
   // Dwie rezerwacje na ten sam termin u tego samego nauczyciela to realny scenariusz,
-  // bo do potwierdzenia termin nikomu nie jest zablokowany.
-  const conflict = await prisma.booking.findFirst({
-    where: {
-      id: { not: booking.id },
-      teacherProfileId: booking.teacherProfileId,
-      status: "CONFIRMED",
-      startsAt: { lt: booking.endsAt },
-      endsAt: { gt: booking.startsAt },
-    },
-    select: { reference: true },
+  // bo do potwierdzenia termin nikomu nie jest zablokowany. Godziny grup liczą
+  // się tak samo jak potwierdzone lekcje — sprawdza to `findScheduleConflicts()`.
+  const conflicts = await findScheduleConflicts({
+    teacherProfileId: booking.teacherProfileId,
+    startsAt: booking.startsAt,
+    endsAt: booking.endsAt,
+    ignoreBookingId: booking.id,
   })
-  if (conflict) {
-    throw new Error(
-      `Termin koliduje z potwierdzoną rezerwacją ${conflict.reference}.`
-    )
-  }
+  if (conflicts.length > 0) throw new Error(conflictMessage(conflicts))
 
   await prisma.booking.update({
     where: { id: booking.id },

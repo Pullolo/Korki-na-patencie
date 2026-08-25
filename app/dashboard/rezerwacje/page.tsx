@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { BookingActions } from "@/components/dashboard/booking-actions"
+import { CreateBooking } from "@/components/dashboard/bookings/create-booking"
 import { Header } from "@/components/dashboard/header"
 import { EmptyState, Panel } from "@/components/dashboard/panel"
 import { StatusBadge } from "@/components/dashboard/status-badge"
@@ -20,7 +21,11 @@ import {
   BOOKING_STATUS_TONES,
   LOCATION_TYPE_LABELS,
 } from "@/lib/labels"
-import { getBookingCountsByStatus, getBookings } from "@/lib/queries/bookings"
+import {
+  getBookingCountsByStatus,
+  getBookingFormOptions,
+  getBookings,
+} from "@/lib/queries/bookings"
 import { getSiteSettingsSafe } from "@/lib/queries/settings"
 
 export const metadata: Metadata = { title: "Rezerwacje" }
@@ -46,12 +51,13 @@ export default async function BookingsPage({
   const ctx = await ensureDashboardPage()
   const status = parseStatus((await searchParams).status)
 
-  const [bookings, counts, settings] = await Promise.all([
+  const [bookings, counts, settings, formOptions] = await Promise.all([
     getBookings(ctx, { status }).catch(() => []),
     getBookingCountsByStatus(ctx).catch(
       () => ({}) as Partial<Record<BookingStatus, number>>
     ),
     getSiteSettingsSafe(),
+    getBookingFormOptions(ctx).catch(() => null),
   ])
 
   const total = Object.values(counts).reduce((sum, n) => sum + (n ?? 0), 0)
@@ -68,6 +74,10 @@ export default async function BookingsPage({
       />
 
       <div className="space-y-4 p-4 sm:p-6">
+        {formOptions && (
+          <CreateBooking options={formOptions} currency={settings.currency} />
+        )}
+
         <div className="flex flex-wrap gap-1.5">
           {FILTERS.map((filter) => {
             const isActive = status === filter.value
@@ -98,7 +108,7 @@ export default async function BookingsPage({
             <EmptyState
               icon={<ClipboardList className="size-6" />}
               title="Brak rezerwacji"
-              description="Gdy uczniowie zaczną się zapisywać, ich zgłoszenia pojawią się na tej liście."
+              description="Gdy uczniowie zaczną się zapisywać, ich zgłoszenia pojawią się na tej liście. Lekcję ustaloną przez telefon możesz wpisać przyciskiem „Dodaj lekcję”."
             />
           ) : (
             <div className="w-full overflow-x-auto">

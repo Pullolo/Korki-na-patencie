@@ -10,7 +10,7 @@ import { StatusBadge } from "@/components/dashboard/status-badge"
 import { TeacherProfileForm } from "@/components/dashboard/teacher/profile-form"
 import { TeacherSubjectsManager } from "@/components/dashboard/teacher/subjects-manager"
 import { ensureDashboardPage } from "@/lib/auth"
-import { plural } from "@/lib/format"
+import { personName, plural } from "@/lib/format"
 import { getLevels, getSubjects } from "@/lib/queries/catalog"
 import { getActivePriceRules } from "@/lib/queries/pricing"
 import { getTeacherProfile } from "@/lib/queries/people"
@@ -40,15 +40,13 @@ export default async function TeacherProfilePage({
 
   if (!teacher) notFound()
 
-  const name =
-    [teacher.user.firstName, teacher.user.lastName].filter(Boolean).join(" ") ||
-    teacher.user.email
+  const name = personName(teacher.user)
 
   return (
     <div className="flex w-full min-w-0 flex-col">
       <Header
         title={name}
-        subtitle={teacher.user.email}
+        subtitle={teacher.user.email ?? undefined}
         backHref={ctx.isAdmin ? "/dashboard/nauczyciele" : "/dashboard"}
         actions={
           <div className="flex items-center gap-2">

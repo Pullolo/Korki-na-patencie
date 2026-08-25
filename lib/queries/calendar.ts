@@ -1,6 +1,7 @@
 import { startOfWeek } from "date-fns"
 
 import { computeAvailability, groupMeetingsInRange } from "@/lib/availability"
+import { personName, studentLabel } from "@/lib/format"
 import type { BookingStatus } from "@/lib/generated/prisma/enums"
 import { prisma } from "@/lib/prisma"
 import { getTeacherSchedule } from "@/lib/queries/availability"
@@ -46,32 +47,6 @@ export function weekStartFor(date: Date) {
   return startOfWeek(date, { weekStartsOn: 1 })
 }
 
-function personName(user: {
-  firstName: string | null
-  lastName: string | null
-  email?: string
-}) {
-  return [user.firstName, user.lastName].filter(Boolean).join(" ") || "—"
-}
-
-function studentNameOf(booking: {
-  guestName: string | null
-  student: {
-    firstName: string | null
-    lastName: string | null
-    email: string
-  } | null
-}) {
-  if (booking.student) {
-    return (
-      [booking.student.firstName, booking.student.lastName]
-        .filter(Boolean)
-        .join(" ") || booking.student.email
-    )
-  }
-  return booking.guestName || "Gość"
-}
-
 /**
  * Lekcje i wolne okienka na jeden tydzień.
  * `teacherProfileId === null` to widok admina „wszyscy nauczyciele" —
@@ -115,7 +90,7 @@ export async function getWeekSchedule(
     status: booking.status,
     startsAt: booking.startsAt,
     endsAt: booking.endsAt,
-    studentName: studentNameOf(booking),
+    studentName: studentLabel(booking),
     subjectName: booking.subject?.name ?? null,
     teacherName: personName(booking.teacherProfile.user),
   }))

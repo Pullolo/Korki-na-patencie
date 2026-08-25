@@ -86,10 +86,14 @@ enum NotificationType {
 
 // ─── Ludzie ───────────────────────────────────────────────────────────────────
 
+/// Konto w Clerku jest opcjonalne: ucznia umówionego przez telefon zakłada
+/// nauczyciel w panelu (`clerkId` i `email` puste). Gdy taka osoba zarejestruje
+/// się później na ten sam adres, `ensureUserSynced()` dopina `clerkId` do
+/// istniejącego wiersza, więc historia lekcji zostaje przy niej.
 model User {
   id        String   @id @default(cuid())
   clerkId   String?  @unique
-  email     String   @unique
+  email     String?  @unique
   firstName String?
   lastName  String?
   imageUrl  String?

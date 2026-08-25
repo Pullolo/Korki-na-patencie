@@ -60,15 +60,17 @@ async function loadContext(): Promise<DashboardContext | null> {
   })
   if (!dbUser) return null
 
+  // Osoba w panelu zawsze ma konto w Clerku, więc mail jest — pusty string
+  // to tylko domknięcie typu po tym, jak `email` stał się opcjonalny.
+  const email = dbUser.email ?? ""
   const fullName =
-    [dbUser.firstName, dbUser.lastName].filter(Boolean).join(" ") ||
-    dbUser.email
+    [dbUser.firstName, dbUser.lastName].filter(Boolean).join(" ") || email
 
   return {
     clerkId: clerkUser.id,
     role,
     userId: dbUser.id,
-    email: dbUser.email,
+    email,
     fullName,
     imageUrl: dbUser.imageUrl,
     teacherProfileId: dbUser.teacherProfile?.id ?? null,

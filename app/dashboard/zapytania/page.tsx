@@ -6,7 +6,11 @@ import { Header } from "@/components/dashboard/header"
 import { InquiryCard } from "@/components/dashboard/inquiry-card"
 import { EmptyState, Panel } from "@/components/dashboard/panel"
 import { ensureDashboardPage } from "@/lib/auth"
-import { formatDateTime, formatRelativeTime } from "@/lib/format"
+import {
+  formatDateTime,
+  formatRelativeTime,
+  personName,
+} from "@/lib/format"
 import { InquiryStatus } from "@/lib/generated/prisma/enums"
 import { INQUIRY_STATUS_LABELS } from "@/lib/labels"
 import { getTeacherOptions } from "@/lib/queries/availability"
@@ -47,10 +51,7 @@ export default async function InquiriesPage({
 
   const teachers = teacherOptions.map((teacher) => ({
     id: teacher.id,
-    name:
-      [teacher.user.firstName, teacher.user.lastName]
-        .filter(Boolean)
-        .join(" ") || teacher.user.email,
+    name: personName(teacher.user),
   }))
 
   return (

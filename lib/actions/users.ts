@@ -40,13 +40,14 @@ async function uniqueSlug(base: string) {
  */
 async function createTeacherProfile(user: {
   id: string
-  email: string
+  email: string | null
   firstName: string | null
   lastName: string | null
 }) {
   const base = slugify(
     [user.firstName, user.lastName].filter(Boolean).join(" ") ||
-      user.email.split("@")[0]
+      user.email?.split("@")[0] ||
+      "nauczyciel"
   )
   return prisma.teacherProfile.create({
     data: { userId: user.id, slug: await uniqueSlug(base) },

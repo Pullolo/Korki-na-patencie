@@ -12,6 +12,7 @@ import {
   formatDate,
   formatPrice,
   formatTime,
+  personName,
   plural,
   teacherLabel,
 } from "@/lib/format"
@@ -39,15 +40,13 @@ export default async function StudentDetailPage({
   if (!detail) notFound()
   const { student, bookings, totals } = detail
 
-  const name =
-    [student.firstName, student.lastName].filter(Boolean).join(" ") ||
-    student.email
+  const name = personName(student)
 
   return (
     <div className="flex w-full min-w-0 flex-col">
       <Header
         title={name}
-        subtitle={student.email}
+        subtitle={student.email ?? undefined}
         backHref="/dashboard/uczniowie"
       />
 

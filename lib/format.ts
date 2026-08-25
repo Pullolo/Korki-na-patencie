@@ -95,23 +95,32 @@ export function plural(count: number, one: string, few: string, many: string) {
   return many
 }
 
+export type Person = {
+  firstName: string | null
+  lastName: string | null
+  email?: string | null
+}
+
+/**
+ * Imię i nazwisko, a gdy ich brak — mail. Uczeń umówiony przez telefon może nie
+ * mieć ani jednego, więc na końcu zostaje etykieta zastępcza zamiast pustki.
+ */
+export function personName(person: Person) {
+  return (
+    [person.firstName, person.lastName].filter(Boolean).join(" ") ||
+    person.email ||
+    "Bez nazwy"
+  )
+}
+
 type BookingPerson = {
   guestName?: string | null
-  student?: {
-    firstName: string | null
-    lastName: string | null
-    email: string
-  } | null
+  student?: Person | null
 }
 
 /** Uczeń może być zalogowany albo wpisany jako gość — nazwa bierze się z tego, co jest. */
 export function studentLabel(booking: BookingPerson) {
-  if (booking.student) {
-    const name = [booking.student.firstName, booking.student.lastName]
-      .filter(Boolean)
-      .join(" ")
-    return name || booking.student.email
-  }
+  if (booking.student) return personName(booking.student)
   return booking.guestName || "Gość"
 }
 

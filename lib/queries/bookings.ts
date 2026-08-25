@@ -1,4 +1,5 @@
 import { teacherScope, type DashboardContext } from "@/lib/auth"
+import { personName } from "@/lib/format"
 import type { BookingStatus } from "@/lib/generated/prisma/enums"
 import { prisma } from "@/lib/prisma"
 
@@ -92,4 +93,64 @@ export async function getBookingDetail(ctx: DashboardContext, id: string) {
       },
     },
   })
+}
+
+export type BookingFormOptions = Awaited<
+  ReturnType<typeof getBookingFormOptions>
+>
+
+/**
+ * Wszystko, czego potrzebuje formularz ręcznego zapisu lekcji: kogo można
+ * wpisać jako prowadzącego (admin — wszystkich, nauczyciel — siebie), jego
+ * lokalizacje i domyślną długość lekcji, oraz słowniki i cennik do podpowiedzi
+ * ceny po stronie przeglądarki.
+ */
+export async function getBookingFormOptions(ctx: DashboardContext) {
+  const [teachers, subjects, levels, priceRules] = await Promise.all([
+    prisma.teacherProfile.findMany({
+      where: ctx.isAdmin ? {} : { id: ctx.teacherProfileId ?? "__brak__" },
+      orderBy: { order: "asc" },
+      select: {
+        id: true,
+        slotMinutes: true,
+        user: { select: { firstName: true, lastName: true, email: true } },
+        locations: {
+          where: { isActive: true },
+          orderBy: { order: "asc" },
+          select: { id: true, name: true, type: true },
+        },
+      },
+    }),
+    prisma.subject.findMany({
+      where: { isActive: true },
+      orderBy: { order: "asc" },
+      select: { id: true, name: true },
+    }),
+    prisma.level.findMany({
+      where: { isActive: true },
+      orderBy: { order: "asc" },
+      select: { id: true, name: true },
+    }),
+    prisma.priceRule.findMany({
+      where: { isActive: true },
+      select: {
+        levelId: true,
+        subjectId: true,
+        teacherProfileId: true,
+        pricePerHour: true,
+      },
+    }),
+  ])
+
+  return {
+    teachers: teachers.map((teacher) => ({
+      id: teacher.id,
+      name: personName(teacher.user),
+      slotMinutes: teacher.slotMinutes,
+      locations: teacher.locations,
+    })),
+    subjects,
+    levels,
+    priceRules,
+  }
 }
