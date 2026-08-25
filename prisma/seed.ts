@@ -103,9 +103,21 @@ async function main() {
   // ─── Cennik zajęć indywidualnych ───────────────────────────────────────────
   // Odwzorowanie cennika ze strony: stawka zależy od poziomu, nie od przedmiotu.
   const priceList = [
-    { level: "podstawowka", pricePerHour: 80, note: "Zajęcia indywidualne dla szkół podstawowych" },
-    { level: "liceum", pricePerHour: 100, note: "Zajęcia indywidualne dla szkół średnich" },
-    { level: "matura", pricePerHour: 120, note: "Indywidualne przygotowania maturalne" },
+    {
+      level: "podstawowka",
+      pricePerHour: 80,
+      note: "Zajęcia indywidualne dla szkół podstawowych",
+    },
+    {
+      level: "liceum",
+      pricePerHour: 100,
+      note: "Zajęcia indywidualne dla szkół średnich",
+    },
+    {
+      level: "matura",
+      pricePerHour: 120,
+      note: "Indywidualne przygotowania maturalne",
+    },
   ]
   for (const item of priceList) {
     const existing = await prisma.priceRule.findFirst({
@@ -526,8 +538,8 @@ async function main() {
         level: "podstawowka",
         meetingMinutes: 60,
         pricePerMonth: 250,
-        weekday: 3,
-        startMin: 17 * 60,
+        weekday: 2,
+        startMin: 18 * 60,
         description:
           "Cztery spotkania w miesiącu po godzinie zegarowej, grupa 4–8 osób.",
       },
@@ -537,8 +549,8 @@ async function main() {
         level: "matura",
         meetingMinutes: 90,
         pricePerMonth: 350,
-        weekday: 5,
-        startMin: 17 * 60,
+        weekday: 4,
+        startMin: 18 * 60,
         description:
           "Cztery spotkania w miesiącu po półtorej godziny, grupa 4–8 osób.",
       },

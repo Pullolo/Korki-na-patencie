@@ -1,6 +1,6 @@
 import { startOfWeek } from "date-fns"
 
-import { computeAvailability } from "@/lib/availability"
+import { computeAvailability, groupMeetingsInRange } from "@/lib/availability"
 import type { BookingStatus } from "@/lib/generated/prisma/enums"
 import { prisma } from "@/lib/prisma"
 import { getTeacherSchedule } from "@/lib/queries/availability"
@@ -29,6 +29,16 @@ export type CalendarBooking = {
 export type CalendarFreeSlot = {
   startsAt: Date
   endsAt: Date
+}
+
+export type CalendarGroupMeeting = {
+  id: string
+  name: string
+  startsAt: Date
+  endsAt: Date
+  seats: number
+  maxSeats: number
+  teacherName: string
 }
 
 /** Poniedziałek tygodnia, w którym leży podana data. */
@@ -70,7 +80,11 @@ function studentNameOf(booking: {
 export async function getWeekSchedule(
   teacherProfileId: string | null,
   weekStart: Date
-): Promise<{ bookings: CalendarBooking[]; freeSlots: CalendarFreeSlot[] }> {
+): Promise<{
+  bookings: CalendarBooking[]
+  freeSlots: CalendarFreeSlot[]
+  groupMeetings: CalendarGroupMeeting[]
+}> {
   const weekEnd = new Date(weekStart.getTime() + 7 * 86_400_000)
 
   const rows = await prisma.booking.findMany({
@@ -106,10 +120,45 @@ export async function getWeekSchedule(
     teacherName: personName(booking.teacherProfile.user),
   }))
 
-  if (!teacherProfileId) return { bookings, freeSlots: [] }
+  // Grupy spotykają się cyklicznie — rozwijamy je na konkretne terminy tygodnia.
+  const groups = await prisma.courseGroup.findMany({
+    where: {
+      isActive: true,
+      ...(teacherProfileId ? { teacherProfileId } : {}),
+    },
+    select: {
+      id: true,
+      name: true,
+      weekday: true,
+      startMin: true,
+      meetingMinutes: true,
+      maxSeats: true,
+      startsOn: true,
+      endsOn: true,
+      isActive: true,
+      teacherProfile: {
+        select: { user: { select: { firstName: true, lastName: true } } },
+      },
+      _count: { select: { enrollments: { where: { status: "ACTIVE" } } } },
+    },
+  })
+
+  const groupMeetings: CalendarGroupMeeting[] = groups.flatMap((group) =>
+    groupMeetingsInRange([group], weekStart, 7).map((meeting) => ({
+      id: group.id,
+      name: group.name,
+      startsAt: meeting.startsAt,
+      endsAt: meeting.endsAt,
+      seats: group._count.enrollments,
+      maxSeats: group.maxSeats,
+      teacherName: personName(group.teacherProfile.user),
+    }))
+  )
+
+  if (!teacherProfileId) return { bookings, freeSlots: [], groupMeetings }
 
   const profile = await getTeacherSchedule(teacherProfileId)
-  if (!profile) return { bookings, freeSlots: [] }
+  if (!profile) return { bookings, freeSlots: [], groupMeetings }
 
   const busy = await prisma.booking.findMany({
     where: {
@@ -126,7 +175,8 @@ export async function getWeekSchedule(
     days: 7,
     rules: profile.availabilityRules,
     exceptions: profile.availabilityExceptions,
-    busy,
+    // Godziny grup są zajęte tak samo jak potwierdzone lekcje.
+    busy: [...busy, ...groupMeetings],
     settings: {
       slotMinutes: profile.slotMinutes,
       bufferMinutes: profile.bufferMinutes,
@@ -139,5 +189,5 @@ export async function getWeekSchedule(
     day.slots.map((slot) => ({ startsAt: slot.startsAt, endsAt: slot.endsAt }))
   )
 
-  return { bookings, freeSlots }
+  return { bookings, freeSlots, groupMeetings }
 }

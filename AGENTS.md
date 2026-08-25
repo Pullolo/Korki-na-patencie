@@ -23,8 +23,12 @@ danych: `docs/PLAN.md`.
   nauczyciel tylko własny profil.
 - Godziny dostępności trzymamy jako minuty od północy (`startMin`, `endMin`),
   dni tygodnia w konwencji ISO (1 = poniedziałek).
-- Cena godziny = `TeacherSubject.price ?? Subject.basePrice` — nigdy nie licz jej ręcznie,
-  używaj `resolvePrice()` z `lib/pricing.ts`. `Booking.price` to migawka z chwili zapisu.
+- Cena godziny wynika z tabeli `PriceRule` (poziom / przedmiot / nauczyciel, wszystkie opcjonalne).
+  Nigdy nie licz jej ręcznie — wołaj `resolveHourlyPrice()` z `lib/pricing.ts`, które wybiera
+  najbardziej szczegółową pasującą regułę. `Booking.price` to migawka z chwili zapisu.
+- Zajęcia grupowe (`CourseGroup`) rozliczają się miesięcznie, mają stały termin w tygodniu
+  i blokują godziny w grafiku przez `groupMeetingsInRange()`. Rabat dla uczniów zajęć
+  indywidualnych nalicza `enrollInGroup()` i zapisuje jako migawkę w `GroupEnrollment`.
 - Lokalizacje należą do nauczyciela (`Location.teacherProfileId`), nie ma wspólnego słownika.
 - Klucze miesięcy buduj z lokalnych składowych daty, nie przez `toISOString()` — offset strefy
   przenosi początek miesiąca do poprzedniego.

@@ -86,13 +86,17 @@ export async function createCourseGroup(
     data: {
       teacherProfileId,
       name: input.name.trim(),
-      slug: await uniqueSlug(input.name, async (slug) => {
-        const found = await prisma.courseGroup.findUnique({
-          where: { slug },
-          select: { id: true },
-        })
-        return found?.id ?? null
-      }, { fallback: "grupa" }),
+      slug: await uniqueSlug(
+        input.name,
+        async (slug) => {
+          const found = await prisma.courseGroup.findUnique({
+            where: { slug },
+            select: { id: true },
+          })
+          return found?.id ?? null
+        },
+        { fallback: "grupa" }
+      ),
       subjectId: input.subjectId,
       levelId: input.levelId,
       description: input.description?.trim() || null,

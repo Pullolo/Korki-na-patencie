@@ -1,6 +1,10 @@
 import Link from "next/link"
 
-import type { CalendarBooking, CalendarFreeSlot } from "@/lib/queries/calendar"
+import type {
+  CalendarBooking,
+  CalendarFreeSlot,
+  CalendarGroupMeeting,
+} from "@/lib/queries/calendar"
 import { formatTime } from "@/lib/format"
 import { BOOKING_STATUS_LABELS } from "@/lib/labels"
 import { cn } from "@/lib/utils"
@@ -38,11 +42,13 @@ export function WeekCalendar({
   weekStart,
   bookings,
   freeSlots,
+  groupMeetings,
   showTeacher,
 }: {
   weekStart: Date
   bookings: CalendarBooking[]
   freeSlots: CalendarFreeSlot[]
+  groupMeetings: CalendarGroupMeeting[]
   /** Widok „wszyscy nauczyciele" — wtedy na kafelku pokazujemy, czyja to lekcja. */
   showTeacher?: boolean
 }) {
@@ -142,6 +148,9 @@ export function WeekCalendar({
           </div>
 
           {days.map((day) => {
+            const dayGroups = groupMeetings.filter((g) =>
+              sameDay(g.startsAt, day)
+            )
             const dayBookings = bookings.filter((b) => sameDay(b.startsAt, day))
             const daySlots = freeSlots.filter((s) => sameDay(s.startsAt, day))
             const isToday = sameDay(day, today)
@@ -168,6 +177,33 @@ export function WeekCalendar({
                     }}
                     title={`Wolne: ${formatTime(slot.startsAt)}–${formatTime(slot.endsAt)}`}
                   />
+                ))}
+
+                {dayGroups.map((meeting) => (
+                  <div
+                    key={`group-${meeting.id}-${meeting.startsAt.toISOString()}`}
+                    className="absolute right-1 left-1 overflow-hidden rounded-md border border-violet-500/40 bg-violet-500/15 px-1.5 py-1 text-violet-800 dark:text-violet-200"
+                    style={{
+                      top:
+                        (minutesOfDay(meeting.startsAt) - gridStart) *
+                        PX_PER_MIN,
+                      height: Math.max(
+                        (minutesOfDay(meeting.endsAt) -
+                          minutesOfDay(meeting.startsAt)) *
+                          PX_PER_MIN,
+                        22
+                      ),
+                    }}
+                    title={`${formatTime(meeting.startsAt)}–${formatTime(meeting.endsAt)} · ${meeting.name} · ${meeting.seats}/${meeting.maxSeats} miejsc`}
+                  >
+                    <p className="truncate text-[11px] leading-tight font-semibold">
+                      {formatTime(meeting.startsAt)} {meeting.name}
+                    </p>
+                    <p className="truncate text-[10px] leading-tight opacity-80">
+                      grupa · {meeting.seats}/{meeting.maxSeats}
+                      {showTeacher && ` · ${meeting.teacherName}`}
+                    </p>
+                  </div>
                 ))}
 
                 {dayBookings.map((booking) => (
@@ -210,7 +246,13 @@ export function WeekCalendar({
   )
 }
 
-export function CalendarLegend({ showFree }: { showFree: boolean }) {
+export function CalendarLegend({
+  showFree,
+  showGroups,
+}: {
+  showFree: boolean
+  showGroups: boolean
+}) {
   const items: Array<{ label: string; className: string }> = [
     { label: "Potwierdzona", className: STATUS_STYLES.CONFIRMED },
     { label: "Oczekuje", className: STATUS_STYLES.PENDING },
@@ -229,6 +271,12 @@ export function CalendarLegend({ showFree }: { showFree: boolean }) {
           {item.label}
         </span>
       ))}
+      {showGroups && (
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="size-3 rounded border border-violet-500/40 bg-violet-500/15" />
+          Zajęcia grupowe
+        </span>
+      )}
       {showFree && (
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="size-3 rounded border border-dashed border-border bg-card/40" />

@@ -35,6 +35,7 @@ const EMPTY_STATS: DashboardStats = {
   revenueThisMonth: 0,
   revenueGrowth: 0,
   studentsCount: 0,
+  groupRevenuePerMonth: 0,
   chart: [],
   upcoming: [],
   latestPending: [],
@@ -82,9 +83,14 @@ export default async function DashboardPage() {
             iconBg="bg-blue-500/15"
           />
           <StatCard
-            title="Przychód w tym miesiącu"
+            title="Przychód z lekcji"
             value={formatPrice(stats.revenueThisMonth, settings.currency)}
             change={stats.revenueGrowth}
+            changeLabel={
+              stats.groupRevenuePerMonth > 0
+                ? `+ ${formatPrice(stats.groupRevenuePerMonth, settings.currency)}/mies. z grup`
+                : "vs poprzedni miesiąc"
+            }
             icon={<Wallet className="size-4 text-violet-500" />}
             iconBg="bg-violet-500/15"
           />

@@ -83,10 +83,10 @@ export default async function CalendarPage({
     )
   }
 
-  const { bookings, freeSlots } = await getWeekSchedule(
+  const { bookings, freeSlots, groupMeetings } = await getWeekSchedule(
     teacherProfileId,
     weekStart
-  ).catch(() => ({ bookings: [], freeSlots: [] }))
+  ).catch(() => ({ bookings: [], freeSlots: [], groupMeetings: [] }))
 
   const weekEnd = new Date(weekStart)
   weekEnd.setDate(weekEnd.getDate() + 6)
@@ -146,16 +146,23 @@ export default async function CalendarPage({
             <span className="ml-2 text-xs text-muted-foreground">
               {bookings.length}{" "}
               {plural(bookings.length, "lekcja", "lekcje", "lekcji")}
+              {groupMeetings.length > 0 &&
+                ` · ${groupMeetings.length} ${plural(groupMeetings.length, "spotkanie grupy", "spotkania grup", "spotkań grup")}`}
               {teacherProfileId &&
                 ` · ${freeSlots.length} ${plural(freeSlots.length, "wolne okienko", "wolne okienka", "wolnych okienek")}`}
             </span>
           </div>
 
-          <CalendarLegend showFree={Boolean(teacherProfileId)} />
+          <CalendarLegend
+            showFree={Boolean(teacherProfileId)}
+            showGroups={groupMeetings.length > 0}
+          />
         </div>
 
         <Panel bodyClassName="p-0 sm:p-0">
-          {bookings.length === 0 && freeSlots.length === 0 ? (
+          {bookings.length === 0 &&
+          freeSlots.length === 0 &&
+          groupMeetings.length === 0 ? (
             <EmptyState
               icon={<CalendarDays className="size-6" />}
               title="Pusty tydzień"
@@ -170,6 +177,7 @@ export default async function CalendarPage({
               weekStart={weekStart}
               bookings={bookings}
               freeSlots={freeSlots}
+              groupMeetings={groupMeetings}
               showTeacher={!teacherProfileId}
             />
           )}

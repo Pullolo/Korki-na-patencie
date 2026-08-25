@@ -69,8 +69,6 @@ export async function getTeacherGroupSchedules(teacherProfileId: string) {
   })
 }
 
-export function seatsTaken(group: {
-  enrollments: Array<{ status: string }>
-}) {
+export function seatsTaken(group: { enrollments: Array<{ status: string }> }) {
   return group.enrollments.filter((item) => item.status === "ACTIVE").length
 }

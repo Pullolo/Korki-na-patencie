@@ -32,6 +32,7 @@ export async function getDashboardStats(ctx: DashboardContext) {
     chartBookings,
     upcoming,
     latestPending,
+    groupRevenue,
   ] = await Promise.all([
     prisma.booking.count({
       where: {
@@ -108,6 +109,15 @@ export async function getDashboardStats(ctx: DashboardContext) {
         subject: { select: { name: true } },
       },
     }),
+    prisma.groupEnrollment.aggregate({
+      _sum: { monthlyPrice: true },
+      where: {
+        status: "ACTIVE",
+        group: ctx.isAdmin
+          ? {}
+          : { teacherProfileId: ctx.teacherProfileId ?? "__brak__" },
+      },
+    }),
   ])
 
   const uniqueStudents = new Set(
@@ -139,6 +149,7 @@ export async function getDashboardStats(ctx: DashboardContext) {
       revenuePrevMonth?._sum?.price ?? 0
     ),
     studentsCount: uniqueStudents.size,
+    groupRevenuePerMonth: groupRevenue?._sum?.monthlyPrice ?? 0,
     chart,
     upcoming,
     latestPending,

@@ -1,4 +1,4 @@
-import { CalendarCheck, Gauge, Wallet } from "lucide-react"
+import { CalendarCheck, Gauge, Users2, Wallet } from "lucide-react"
 import type { Metadata } from "next"
 
 import { DashboardBarChart } from "@/components/dashboard/bar-chart"
@@ -17,6 +17,8 @@ export const metadata: Metadata = { title: "Statystyki" }
 
 const EMPTY = {
   byMonth: [],
+  byGroup: [],
+  groups: { revenuePerMonth: 0, students: 0, discounted: 0 },
   bySubject: [],
   byLevel: [],
   byMode: [],
@@ -51,7 +53,7 @@ export default async function StatisticsPage() {
       />
 
       <div className="space-y-4 p-4 sm:space-y-6 sm:p-6">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
           <StatCard
             title="Lekcje w 6 miesięcy"
             value={String(stats.totals.lessons)}
@@ -60,11 +62,18 @@ export default async function StatisticsPage() {
             iconBg="bg-emerald-500/15"
           />
           <StatCard
-            title="Przychód w 6 miesięcy"
+            title="Przychód z lekcji"
             value={formatPrice(stats.totals.revenue, currency)}
-            hint="Potwierdzone i odbyte lekcje"
+            hint="Zajęcia indywidualne z 6 miesięcy"
             icon={<Wallet className="size-4 text-violet-500" />}
             iconBg="bg-violet-500/15"
+          />
+          <StatCard
+            title="Abonamenty grupowe"
+            value={`${formatPrice(stats.groups.revenuePerMonth, currency)}/mies.`}
+            hint={`${stats.groups.students} ${plural(stats.groups.students, "zapisany uczeń", "zapisanych uczniów", "zapisanych uczniów")}${stats.groups.discounted > 0 ? `, w tym ${stats.groups.discounted} z rabatem` : ""}`}
+            icon={<Users2 className="size-4 text-amber-500" />}
+            iconBg="bg-amber-500/15"
           />
           <StatCard
             title={`Obłożenie na ${stats.occupancy.days} dni`}
@@ -134,6 +143,21 @@ export default async function StatisticsPage() {
             />
           </Panel>
         </div>
+
+        {stats.byGroup.length > 0 && (
+          <Panel
+            title="Zajęcia grupowe"
+            description="Aktywne zapisy i przychód miesięczny"
+          >
+            <DistributionBars
+              items={stats.byGroup.map((item) => ({
+                label: item.label,
+                value: item.count,
+                suffix: `${formatPrice(item.revenue, currency)}/mies.`,
+              }))}
+            />
+          </Panel>
+        )}
 
         {ctx.isAdmin && (
           <Panel

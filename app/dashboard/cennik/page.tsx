@@ -122,7 +122,9 @@ export default async function PricingPage() {
                     <th className="px-4 py-3 font-medium sm:px-5">Grupa</th>
                     <th className="px-4 py-3 font-medium">Termin</th>
                     <th className="px-4 py-3 font-medium">Miesięcznie</th>
-                    <th className="px-4 py-3 font-medium">W przeliczeniu / h</th>
+                    <th className="px-4 py-3 font-medium">
+                      W przeliczeniu / h
+                    </th>
                     <th className="px-4 py-3 font-medium sm:px-5">Miejsca</th>
                   </tr>
                 </thead>
@@ -157,10 +159,7 @@ export default async function PricingPage() {
                           {formatPrice(group.pricePerMonth, currency)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                          {formatPrice(
-                            groupHourlyEquivalent(group),
-                            currency
-                          )}
+                          {formatPrice(groupHourlyEquivalent(group), currency)}
                         </td>
                         <td className="px-4 py-3 sm:px-5">
                           <StatusBadge

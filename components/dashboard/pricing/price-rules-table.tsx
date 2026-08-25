@@ -197,7 +197,9 @@ export function PriceRulesTable({
               <th className="px-4 py-3 font-medium">Stawka / h</th>
               <th className="px-4 py-3 font-medium">Szczegółowość</th>
               <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 text-right font-medium sm:px-5">Akcje</th>
+              <th className="px-4 py-3 text-right font-medium sm:px-5">
+                Akcje
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -223,7 +225,10 @@ export function PriceRulesTable({
                   </td>
                 </tr>
               ) : (
-                <tr key={rule.id} className="transition-colors hover:bg-muted/40">
+                <tr
+                  key={rule.id}
+                  className="transition-colors hover:bg-muted/40"
+                >
                   <td className="px-4 py-3 sm:px-5">
                     <p className="text-foreground">{scopeLabel(rule)}</p>
                     {rule.note && (

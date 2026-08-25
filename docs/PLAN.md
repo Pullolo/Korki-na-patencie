@@ -39,22 +39,52 @@ Ochrona dwuwarstwowa:
 
 ### Oferta
 
-- **Subject** — przedmiot (Matematyka, Fizyka...): nazwa, slug, opis, kolor/ikona, `isActive`, kolejność, SEO
-  oraz **`basePrice`** — cennik przedmiotu, czyli stawka obowiązująca domyślnie każdego nauczyciela.
+- **Subject** — przedmiot (Matematyka, Fizyka...): nazwa, slug, opis, kolor/ikona, `isActive`, kolejność, SEO.
+  Bez ceny — ta mieszka w `PriceRule`.
 - **Level** — poziom (Podstawówka, Liceum, Matura, Studia) jako tabela, nie enum — admin dodaje własne.
-- **TeacherSubject** — kto czego uczy: `teacherProfileId` + `subjectId`, **`price`** nadpisujące cennik
-  przedmiotu dla tego nauczyciela, powiązane poziomy (m-n do `Level`), notatka.
-  Unikat na parze (nauczyciel, przedmiot).
+- **TeacherSubject** — kto czego uczy: `teacherProfileId` + `subjectId`, powiązane poziomy
+  (m-n do `Level`), notatka. Unikat na parze (nauczyciel, przedmiot). Bez ceny — patrz `PriceRule`.
 
-**Skąd bierze się cena:** `TeacherSubject.price ?? Subject.basePrice` — liczy to `lib/pricing.ts`.
-Cena jest atrybutem przedmiotu, ale każdy nauczyciel może mieć za ten przedmiot własną stawkę.
-Rezerwacja zapisuje wynik w `Booking.price` jako migawkę, więc późniejsza zmiana cennika
-nie przelicza wstecz umówionych lekcji.
 - **Location** — gdzie: **należy do konkretnego nauczyciela** (`teacherProfileId`), typ
   (`ONLINE` / `TEACHER_PLACE` / `STUDENT_PLACE`), nazwa, adres, miasto, notatka, `isActive`.
   Każdy nauczyciel ma swój zestaw: własny adres, własny zasięg dojazdu, własny link do zajęć online.
   Nie ma wspólnego słownika lokalizacji.
 
+### Cennik
+
+Cena zależy przede wszystkim od **poziomu**, a dopiero w drugiej kolejności od przedmiotu
+i nauczyciela. Zamiast rozsypywać ją po kilku tabelach, trzymamy jeden cennik:
+
+- **PriceRule** — `levelId`, `subjectId`, `teacherProfileId` (wszystkie opcjonalne) + `pricePerHour`.
+  Puste pole = reguła obejmuje wszystko. Gdy pasuje więcej niż jedna, wygrywa bardziej szczegółowa:
+  nauczyciel (4) bije przedmiot (2), przedmiot bije poziom (1). Liczy to `resolveHourlyPrice()`
+  w `lib/pricing.ts`.
+
+Aktualny cennik zajęć indywidualnych to trzy reguły po poziomach:
+podstawówka **80 zł/h**, szkoła średnia **100 zł/h**, matura **120 zł/h**.
+Wyjątek dla konkretnego nauczyciela albo przedmiotu dokłada się jedną dodatkową regułą.
+
+Rezerwacja zapisuje wyliczoną stawkę w `Booking.price` jako migawkę, więc późniejsza zmiana
+cennika nie przelicza wstecz umówionych lekcji.
+
+### Zajęcia grupowe
+
+Grupa to osobny format: stały termin w tygodniu, limit miejsc i rozliczenie **miesięczne**,
+niezależne od liczby spotkań w danym miesiącu.
+
+- **CourseGroup** — nazwa, nauczyciel, przedmiot i poziom, `minSeats`/`maxSeats`,
+  `meetingsPerMonth`, `meetingMinutes`, `pricePerMonth`, stały `weekday` + `startMin`, lokalizacja.
+- **GroupEnrollment** — zapis ucznia (z konta albo gościa) ze statusem
+  `ACTIVE` / `WAITLIST` / `CANCELLED` / `FINISHED`, naliczonym rabatem i migawką ceny.
+  Po wyczerpaniu miejsc zapis trafia na listę rezerwową, a nie jest odrzucany.
+
+Bieżąca oferta: ósmoklasista **250 zł/mies** (4 × 60 min), matura **350 zł/mies** (4 × 90 min),
+grupy 4–8 osób. Rabat **20%** (`SiteSettings.groupDiscountPercent`) należy się uczniom,
+którzy mają u nas zajęcia indywidualne — naliczany automatycznie w chwili zapisu.
+
+**Godziny grup blokują zapisy indywidualne.** Spotkania rozwijamy z cyklicznego terminu
+(`groupMeetingsInRange()`) i wrzucamy do zajętych terminów w `computeAvailability()`,
+więc nikt nie zapisze się na godzinę, w której nauczyciel prowadzi grupę.
 ### Dostępność — model hybrydowy (wybrany wariant "oba naraz")
 
 - **AvailabilityRule** — cykliczna siatka tygodnia: `weekday` (1 = poniedziałek … 7 = niedziela, ISO), `startMin`/`endMin` (minuty od północy),
@@ -102,6 +132,8 @@ Cała logika w jednym miejscu: `lib/availability.ts`.
 /dashboard/nauczyciele        Nauczyciele         ADMIN
 /dashboard/nauczyciele/[id]   Profil + cennik     ADMIN
 /dashboard/przedmioty         Przedmioty          ADMIN
+/dashboard/cennik             Cennik              ADMIN
+/dashboard/grupy              Zajęcia grupowe     ADMIN (wszystkie) / TEACHER (swoje)
 /dashboard/poziomy            Poziomy             ADMIN
 /dashboard/lokalizacje        Lokalizacje         ADMIN
 
@@ -163,6 +195,10 @@ CMS wypadł z tego etapu — bez frontendu nie ma czego renderować, więc trafi
 9. ✅ **Status systemu** — realne sprawdzenie bazy i Clerka z czasem odpowiedzi.
 10. ✅ **Powiadomienia** — model, strona i dwa zdarzenia, które dziś zachodzą
     (przypisanie zapytania, nadanie roli). Powiadomienia o rezerwacjach ruszą razem z zapisami.
+
+11. ✅ **Cennik i zajęcia grupowe** — tabela reguł cenowych z rozstrzyganiem po szczegółowości,
+    grupy z terminem, limitem miejsc i abonamentem, zapisy z automatycznym rabatem,
+    listy rezerwowe, blokowanie godzin w grafiku i kalendarzu, przychód abonamentowy w statystykach.
 
 **Poza zakresem do czasu frontendu:** ruch na stronie (tabela `PageView` zapełni się dopiero,
 gdy będzie co mierzyć) oraz CMS.

@@ -4,7 +4,10 @@ import { Pencil, Trash2, UserMinus, UserPlus } from "lucide-react"
 import { useState } from "react"
 
 import { ActionButton, IconAction } from "@/components/dashboard/action-button"
-import { GroupForm, type GroupFormOptions } from "@/components/dashboard/groups/group-form"
+import {
+  GroupForm,
+  type GroupFormOptions,
+} from "@/components/dashboard/groups/group-form"
 import {
   Field,
   FormError,
@@ -154,7 +157,9 @@ export function GroupCard({
           <p className="text-sm font-semibold text-foreground">
             {formatPrice(hourly, currency)}
           </p>
-          <p className="text-[11px] text-muted-foreground">w przeliczeniu / h</p>
+          <p className="text-[11px] text-muted-foreground">
+            w przeliczeniu / h
+          </p>
         </div>
         <div>
           <p className="text-sm font-semibold text-foreground">

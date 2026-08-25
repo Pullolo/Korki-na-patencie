@@ -34,7 +34,6 @@ export default async function SubjectsPage() {
             </div>
           ) : (
             <SubjectsTable
-             
               subjects={subjects.map((subject) => ({
                 id: subject.id,
                 name: subject.name,

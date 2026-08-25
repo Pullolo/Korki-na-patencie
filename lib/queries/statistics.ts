@@ -16,7 +16,7 @@ export async function getStatistics(ctx: DashboardContext) {
   const now = new Date()
   const chartStart = startOfMonth(subMonths(now, 5))
 
-  const [rows, statusRows, teacherRows] = await Promise.all([
+  const [rows, statusRows, teacherRows, groupEnrollments] = await Promise.all([
     prisma.booking.findMany({
       where: {
         ...scope,
@@ -47,6 +47,20 @@ export async function getStatistics(ctx: DashboardContext) {
           },
         })
       : Promise.resolve([]),
+    // Abonamenty grupowe to przychód powtarzalny — liczymy je osobno od lekcji.
+    prisma.groupEnrollment.findMany({
+      where: {
+        status: "ACTIVE",
+        group: ctx.isAdmin
+          ? {}
+          : { teacherProfileId: ctx.teacherProfileId ?? "__brak__" },
+      },
+      select: {
+        monthlyPrice: true,
+        discountPercent: true,
+        group: { select: { name: true } },
+      },
+    }),
   ])
 
   // ─── Szeregi czasowe ────────────────────────────────────────────────────────
@@ -145,8 +159,37 @@ export async function getStatistics(ctx: DashboardContext) {
   const occupancy =
     capacity === 0 ? 0 : Math.round((upcomingBooked / capacity) * 100)
 
+  const groupRevenue = groupEnrollments.reduce(
+    (sum, item) => sum + item.monthlyPrice,
+    0
+  )
+  const discounted = groupEnrollments.filter(
+    (item) => item.discountPercent > 0
+  ).length
+
+  const byGroup = Object.entries(
+    groupEnrollments.reduce<Record<string, { count: number; revenue: number }>>(
+      (acc, item) => {
+        const bucket = acc[item.group.name] ?? { count: 0, revenue: 0 }
+        bucket.count += 1
+        bucket.revenue += item.monthlyPrice
+        acc[item.group.name] = bucket
+        return acc
+      },
+      {}
+    )
+  )
+    .map(([label, value]) => ({ label, ...value }))
+    .sort((a, b) => b.count - a.count)
+
   return {
     byMonth,
+    byGroup,
+    groups: {
+      revenuePerMonth: groupRevenue,
+      students: groupEnrollments.length,
+      discounted,
+    },
     bySubject,
     byLevel,
     byMode,

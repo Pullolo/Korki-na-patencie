@@ -21,6 +21,8 @@ import {
   UserCog,
   UserRound,
   Users,
+  Users2,
+  Wallet,
 } from "lucide-react"
 
 import type { UserRole } from "@/lib/generated/prisma/enums"
@@ -98,6 +100,14 @@ export const NAVIGATION: NavGroup[] = [
         icon: BookOpen,
         adminOnly: true,
       },
+      {
+        name: "Cennik",
+        href: "/dashboard/cennik",
+        icon: Wallet,
+        adminOnly: true,
+      },
+      // Grupy prowadzi nauczyciel, więc widzi je razem z resztą swojej oferty.
+      { name: "Grupy", href: "/dashboard/grupy", icon: Users2 },
       {
         name: "Poziomy",
         href: "/dashboard/poziomy",
