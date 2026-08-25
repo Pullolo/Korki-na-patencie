@@ -1,4 +1,5 @@
 import type { DashboardContext } from "@/lib/auth"
+import type { Prisma } from "@/lib/generated/prisma/client"
 import { prisma } from "@/lib/prisma"
 
 export async function getTeachers() {
@@ -70,22 +71,93 @@ export async function getStudents(ctx: DashboardContext) {
   })
 }
 
-export async function getUsers() {
-  return prisma.user.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 200,
-    select: {
-      id: true,
-      clerkId: true,
-      email: true,
-      firstName: true,
-      lastName: true,
-      imageUrl: true,
-      role: true,
-      createdAt: true,
-      teacherProfile: { select: { id: true, slug: true } },
-    },
-  })
+export const USER_SORT_KEYS = ["nazwa", "rola", "profil", "data"] as const
+export type UserSortKey = (typeof USER_SORT_KEYS)[number]
+export type SortDirection = "asc" | "desc"
+
+/** Ile kont pokazujemy naraz — resztę zawęża wyszukiwarka. */
+export const USERS_LIMIT = 200
+
+/**
+ * Każde słowo frazy musi trafić w imię, nazwisko albo mail, więc „kowalska anna”
+ * znajduje to samo co „anna kowalska”.
+ */
+function userSearchWhere(search: string): Prisma.UserWhereInput {
+  const words = search.split(/\s+/).filter(Boolean).slice(0, 5)
+  return {
+    AND: words.map((word): Prisma.UserWhereInput => {
+      const match = { contains: word, mode: "insensitive" } as const
+      return {
+        OR: [{ firstName: match }, { lastName: match }, { email: match }],
+      }
+    }),
+  }
+}
+
+function userOrderBy(
+  sort: UserSortKey,
+  dir: SortDirection
+): Prisma.UserOrderByWithRelationInput[] {
+  switch (sort) {
+    case "nazwa":
+      // Konta bez imienia lądują na końcu niezależnie od kierunku.
+      return [
+        { firstName: { sort: dir, nulls: "last" } },
+        { lastName: { sort: dir, nulls: "last" } },
+        { email: { sort: dir, nulls: "last" } },
+      ]
+    case "rola":
+      // Kolejność enuma w bazie: ADMIN, TEACHER, STUDENT.
+      return [{ role: dir }, { createdAt: "desc" }]
+    case "profil":
+      // Brak profilu to NULL z LEFT JOINa: rosnąco najpierw konta z profilem,
+      // malejąco — te bez niego.
+      return [{ teacherProfile: { createdAt: dir } }, { createdAt: "desc" }]
+    case "data":
+      return [{ createdAt: dir }]
+  }
+}
+
+/**
+ * Lista kont dla admina. Filtrujemy i sortujemy w bazie, żeby limit obcinał
+ * dopiero wynik wyszukiwania, a nie przypadkowe 200 najnowszych kont.
+ */
+export async function getUsers(
+  options: {
+    search?: string
+    sort?: UserSortKey
+    dir?: SortDirection
+  } = {}
+) {
+  const search = options.search?.trim() ?? ""
+  const where = search ? userSearchWhere(search) : {}
+
+  const [users, matching] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      orderBy: userOrderBy(options.sort ?? "data", options.dir ?? "desc"),
+      take: USERS_LIMIT,
+      select: {
+        id: true,
+        clerkId: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        imageUrl: true,
+        role: true,
+        createdAt: true,
+        teacherProfile: { select: { id: true, slug: true } },
+      },
+    }),
+    prisma.user.count({ where }),
+  ])
+
+  return {
+    users,
+    /** Ile kont pasuje do frazy — bez limitu strony. */
+    matching,
+    total: search ? await prisma.user.count() : matching,
+  }
 }
 
 /** Pełny profil nauczyciela na stronę szczegółów. */
