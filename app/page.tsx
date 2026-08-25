@@ -268,7 +268,7 @@ export default async function HomePage() {
               <a
                 key={item.href}
                 href={item.href}
-                className="rounded-xl px-3 py-2 text-[0.9375rem] font-semibold text-front-muted transition-colors hover:bg-front-brand-soft hover:text-front-brand"
+                className="rounded-xl px-3 py-2 font-semibold text-front-muted transition-colors hover:bg-front-brand-soft hover:text-front-brand"
               >
                 {item.label}
               </a>

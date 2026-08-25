@@ -224,7 +224,7 @@ Każdy występuje w parze: nasycony do tekstu i ikon, mglisty do tła.
 - **Title** (Fredoka 600, `1.5rem`; wariant listowy `1.25rem`, `1.125rem`): nazwy przedmiotów, kroków, poziomów cennika, pytania FAQ.
 - **Numeral** (Fredoka 600, `1.875rem` / `1.5rem`, leading-none): kwoty i wybrany termin. Ceny to zawsze Fredoka, nigdy Nunito.
 - **Body** (Nunito 400, `1.125rem`, leading-relaxed): akapity wprowadzające i cytaty. Miara 46–68 znaków, zawsze zadeklarowana.
-- **Label** (Nunito 700, `0.875rem` / `1rem`): przyciski, chipy, nawigacja, metadane. W wyborze terminu godziny dostają `tabular-nums`.
+- **Label** (Nunito 600–700, `0.875rem` / `1rem`): przyciski, chipy, nawigacja, metadane. Waga 700 na kontrolkach, 600 na linkach nawigacji. W wyborze terminu godziny dostają `tabular-nums`.
 - **Micro** (Nunito 700, `0.75rem`, tracking-wide, wersaliki): wyłącznie `sampleTag`.
 
 ### Named Rules
@@ -270,7 +270,7 @@ System ma dwa oddzielne słowniki głębi i nie wolno ich mieszać. Cienie **kon
 
 ## Shapes
 
-Drabina promieni jest ciągła i wszystko na niej leży: `12px` dla drobnych kontrolek (przycisk mały, przełącznik motywu, kafelki godzin i dni, kafelek stopki), `16px` dla przycisków głównych, kafelków ikon i sygnatur, `24px` dla kart, `28px` dla karty wyboru terminu, `32px` dla pasma CTA. Chipy, sygnatury opinii i strzałka FAQ są w pełni owalne. Kanciasty róg nie występuje nigdzie — łącznie z obramowaniem focus, które samo wymusza `border-radius: 0.5rem`.
+Drabina promieni jest ciągła i wszystko na niej leży: `12px` dla drobnych kontrolek (przycisk mały, przełącznik motywu, kafelki godzin i dni, kafelek stopki), `16px` dla przycisków głównych, kafelków ikon i sygnatur, `24px` dla kart, `28px` dla karty wyboru terminu, `32px` dla pasma CTA. Chipy, sygnatury opinii i strzałka FAQ są w pełni owalne. Kanciasty róg nie występuje nigdzie — obramowanie focus też siada na najniższym szczeblu drabiny (`border-radius: 0.75rem`), zamiast zakładać własny kształt.
 
 Obramowania są cienkie i jednorodne: `1px` w kolorze linii wokół kart, `2px` przy kontrolkach, które muszą wyglądać na klikalne (przycisk wtórny, kafelki dni). Nitka między krokami jest jedynym miejscem z linią przerywaną (`border-t-2 border-dashed`), bo opisuje trasę, nie przegrodę.
 

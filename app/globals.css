@@ -251,7 +251,9 @@ html:has([data-surface="front"]) body {
 [data-surface="front"] :focus-visible {
     outline: 3px solid var(--front-brand);
     outline-offset: 2px;
-    border-radius: 0.5rem;
+    /* Najniższy szczebel drabiny promieni — obramowanie focus nie zakłada
+       własnego kształtu poza systemem. */
+    border-radius: 0.75rem;
 }
 
 @keyframes front-slot-in {
