@@ -163,12 +163,22 @@
 
     --front-sun: #c97f00;
     --front-sun-soft: #fff3d6;
+    /* Pole całej sekcji opinii. W ciemnym motywie ciepły odcień robił się
+       mulisty na tak dużej powierzchni, więc zostaje sam grunt. */
+    --front-band-warm: #fff3d6;
     --front-coral: #d1452f;
     --front-coral-soft: #ffe7e2;
     --front-mint: #0a7d66;
     --front-mint-soft: #dff7f0;
     --front-sky: #1568b5;
     --front-sky-soft: #e3f1ff;
+
+    --front-cta: #5b47e0;
+    --front-cta-edge: #4432c2;
+    --front-cta-border: #7a68ee;
+    --front-cta-pill-edge: #c8bffb;
+    --front-on-cta: #ffffff;
+    --front-on-cta-muted: #ddd7ff;
 
     --front-dots: #dedaf6;
     --front-selection: #ddd7ff;
@@ -192,13 +202,21 @@
     --front-on-brand: #ffffff;
 
     --front-sun: #ffc04d;
-    --front-sun-soft: #33291a;
+    --front-sun-soft: #2b2340;
+    --front-band-warm: #131120;
     --front-coral: #ff9179;
     --front-coral-soft: #3a2320;
     --front-mint: #4fd9b8;
     --front-mint-soft: #14332c;
     --front-sky: #7cc0ff;
     --front-sky-soft: #16283c;
+
+    --front-cta: #4f3dcf;
+    --front-cta-edge: #3a2ba3;
+    --front-cta-border: #8574f2;
+    --front-cta-pill-edge: #b3a6f5;
+    --front-on-cta: #ffffff;
+    --front-on-cta-muted: #e0daff;
 
     --front-dots: #2a2542;
     --front-selection: #3a3160;

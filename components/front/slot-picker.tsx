@@ -15,7 +15,8 @@ type Subject = {
   id: string
   name: string
   level: string
-  price: number
+  /** Stawka godzinowa z cennika — cena spotkania liczy się z niej i z długości. */
+  rate: number
   minutes: number
   ring: string
   soft: string
@@ -27,7 +28,7 @@ const SUBJECTS: Subject[] = [
     id: "matematyka",
     name: "Matematyka",
     level: "liceum",
-    price: 100,
+    rate: 100,
     minutes: 60,
     ring: "ring-front-brand",
     soft: "bg-front-brand-soft text-front-brand",
@@ -43,7 +44,7 @@ const SUBJECTS: Subject[] = [
     id: "fizyka",
     name: "Fizyka",
     level: "liceum",
-    price: 100,
+    rate: 100,
     minutes: 60,
     ring: "ring-front-sky",
     soft: "bg-front-sky-soft text-front-sky",
@@ -59,7 +60,7 @@ const SUBJECTS: Subject[] = [
     id: "informatyka",
     name: "Informatyka",
     level: "matura",
-    price: 120,
+    rate: 120,
     minutes: 90,
     ring: "ring-front-mint",
     soft: "bg-front-mint-soft text-front-mint",
@@ -72,6 +73,10 @@ const SUBJECTS: Subject[] = [
     ],
   },
 ]
+
+function lessonPrice(subject: Subject) {
+  return Math.round((subject.rate * subject.minutes) / 60)
+}
 
 function firstDayWithTimes(subject: Subject) {
   const index = subject.days.findIndex((day) => day.times.length > 0)
@@ -99,6 +104,21 @@ export function SlotPicker() {
     setDayIndex(index)
     setTime(subject.days[index].times[0] ?? "")
   }
+
+  const price = lessonPrice(subject)
+  const slot = `${subject.name} (${subject.level}), ${day.label} ${selectedTime}`
+
+  // Wybrany termin musi przeżyć kliknięcie — inaczej cała ta karta jest ozdobą.
+  // Docelowo pójdzie do rezerwacji w bazie; na razie wypełnia wiadomość.
+  const bookHref = `mailto:kontakt@korkinapatencie.pl?subject=${encodeURIComponent(
+    `Rezerwacja: ${slot}`
+  )}&body=${encodeURIComponent(
+    `Dzień dobry,
+
+chcę zająć termin: ${slot}, ${subject.minutes} min — ${price} zł.
+
+`
+  )}`
 
   return (
     <div className="relative">
@@ -223,13 +243,18 @@ export function SlotPicker() {
               {day.label} {selectedTime}
             </p>
           </div>
-          <p className="font-display text-3xl leading-none font-semibold">
-            {subject.price} zł
+          <p className="text-right">
+            <span className="font-display text-3xl leading-none font-semibold">
+              {price} zł
+            </span>
+            <span className="mt-1 block font-body text-sm text-front-muted">
+              {subject.rate} zł/h
+            </span>
           </p>
         </div>
 
-        <a href="#kontakt" className={cn(btnPrimary, "mt-4 w-full")}>
-          Zajmij tę godzinę
+        <a href={bookHref} className={cn(btnPrimary, "mt-4 w-full")}>
+          Zajmij {day.label} {selectedTime}
           <ArrowRight />
         </a>
 

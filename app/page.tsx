@@ -255,7 +255,7 @@ export default async function HomePage() {
       <header className="sticky top-0 z-50 border-b border-front-line bg-front-surface/90 backdrop-blur-sm">
         <div className="mx-auto flex h-18 w-full max-w-6xl items-center justify-between gap-6 px-5 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex size-10 items-center justify-center rounded-2xl bg-front-brand text-white shadow-[0_3px_0_0_var(--color-front-brand-dark)]">
+            <span className="flex size-10 items-center justify-center rounded-2xl bg-[var(--front-brand-solid)] text-[var(--front-on-brand)]">
               <GraduationCap className="size-5" />
             </span>
             <span className="font-display text-base font-semibold tracking-tight whitespace-nowrap sm:text-lg">
@@ -335,14 +335,14 @@ export default async function HomePage() {
                   wolną godzinę
                   <Squiggle className="absolute -bottom-1 left-0 h-[0.3em] w-full text-front-brand" />
                 </span>{" "}
-                <span className="whitespace-nowrap">i zapisz się</span> w minutę
+                <span className="whitespace-nowrap">i zapisz się</span> w minutę
               </h1>
 
               <p className="mt-7 max-w-[46ch] text-lg leading-relaxed text-front-muted">
-                Matematyka, fizyka i informatyka — z nauczycielem, który tłumaczy
-                do skutku. Grafik na stronie jest prawdziwy: godzina, którą
-                widzisz, jest naprawdę wolna, a cenę znasz, zanim napiszesz
-                pierwszą wiadomość.
+                Matematyka, fizyka i informatyka — z nauczycielem, który
+                tłumaczy do skutku. Grafik na stronie jest prawdziwy: godzina,
+                którą widzisz, jest naprawdę wolna, a cenę znasz, zanim
+                napiszesz pierwszą wiadomość.
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -370,7 +370,7 @@ export default async function HomePage() {
 
             <div>
               <div className="mb-2 hidden items-end gap-2 pl-6 lg:flex">
-                <ArrowDoodle className="h-12 w-14 shrink-0 -scale-x-100 text-front-brand" />
+                <ArrowDoodle className="h-12 w-14 shrink-0 text-front-brand" />
                 <p className="max-w-[24ch] pb-3 font-display text-base leading-snug font-semibold text-front-muted">
                   tu wybierasz godzinę, a nie wypełniasz formularz
                 </p>
@@ -385,12 +385,13 @@ export default async function HomePage() {
         <section id="przedmioty" className="bg-front-surface">
           <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 sm:py-24">
             <h2 className="max-w-[20ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
-              Trzy przedmioty, w których jesteśmy{" "}
+              Trzy przedmioty, w których jesteśmy{" "}
               <Marker tone="bg-front-mint-soft">naprawdę dobrzy</Marker>
             </h2>
             <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-front-muted">
-              Nie bierzemy wszystkiego, co się nawinie. Za to w tych trzech
-              doprowadzamy ucznia do momentu, w którym przestaje nas potrzebować.
+              Nie bierzemy wszystkiego, co się nawinie. Za to w tych trzech
+              doprowadzamy ucznia do momentu, w którym przestaje nas
+              potrzebować.
             </p>
 
             <div className="mt-12 grid gap-5 md:grid-cols-3">
@@ -453,7 +454,7 @@ export default async function HomePage() {
               />
               {STEPS.map((step, index) => (
                 <li key={step.title} className="relative">
-                  <span className="flex size-12 items-center justify-center rounded-2xl bg-front-brand font-display text-xl font-semibold text-white shadow-[0_3px_0_0_var(--color-front-brand-dark)]">
+                  <span className="flex size-12 items-center justify-center rounded-2xl bg-[var(--front-brand-solid)] font-display text-xl font-semibold text-[var(--front-on-brand)]">
                     {index + 1}
                   </span>
                   <h3 className="mt-5 font-display text-2xl font-semibold tracking-tight">
@@ -479,38 +480,41 @@ export default async function HomePage() {
               prawdziwe wejdą z panelu, razem z ich grafikiem
             </p>
 
-            <div className="mt-12 grid gap-5 md:grid-cols-3">
+            <div
+              className={cn(
+                cardBase,
+                "mt-10 divide-y divide-front-line overflow-hidden"
+              )}
+            >
               {TEACHERS.map((teacher) => (
                 <article
                   key={teacher.name}
-                  className={cn(cardBase, "flex flex-col p-6")}
+                  className="flex flex-wrap items-center gap-x-5 gap-y-4 p-6 sm:flex-nowrap sm:px-8"
                 >
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={cn(
-                        "flex size-14 shrink-0 items-center justify-center rounded-2xl font-display text-xl font-semibold",
-                        teacher.tone
-                      )}
-                    >
-                      {teacher.initials}
-                    </span>
-                    <div className="min-w-0">
-                      <h3 className="font-display text-xl font-semibold tracking-tight">
-                        {teacher.name}
-                      </h3>
-                      <p className="text-sm font-semibold text-front-muted">
-                        {teacher.subjects.join(" · ")}
-                      </p>
-                    </div>
+                  <span
+                    className={cn(
+                      "flex size-14 shrink-0 items-center justify-center rounded-2xl font-display text-xl font-semibold",
+                      teacher.tone
+                    )}
+                  >
+                    {teacher.initials}
+                  </span>
+
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-xl font-semibold tracking-tight">
+                      {teacher.name}
+                    </h3>
+                    <p className="text-sm font-semibold text-front-muted">
+                      {teacher.subjects.join(" · ")}
+                    </p>
+                    <p className="mt-2 max-w-[62ch] leading-relaxed text-front-muted">
+                      {teacher.bio}
+                    </p>
                   </div>
 
-                  <p className="mt-5 flex-1 leading-relaxed text-front-muted">
-                    {teacher.bio}
-                  </p>
-
-                  <p className="mt-5 flex items-center gap-2 border-t border-front-line pt-4 font-semibold">
+                  <p className="flex shrink-0 items-center gap-2 font-semibold">
                     <Clock3 className="size-5 text-front-mint" />
-                    {teacher.free} wolnych godzin w tym tygodniu
+                    {teacher.free} wolnych godzin w tym tygodniu
                   </p>
                 </article>
               ))}
@@ -522,12 +526,15 @@ export default async function HomePage() {
         <section id="cennik" className="bg-front-ground">
           <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 sm:py-24">
             <h2 className="max-w-[20ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
-              Cena zależy <Marker tone="bg-front-sky-soft">od poziomu</Marker>, nie
-              od tego, jak pilne
+              Cena zależy{" "}
+              <span className="whitespace-nowrap">
+                <Marker tone="bg-front-sky-soft">od poziomu</Marker>,
+              </span>{" "}
+              nie od tego, jak pilne
             </h2>
             <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-front-muted">
-              Jedna stawka za godzinę zegarową — online i stacjonarnie tak samo.
-              Płatność po lekcji.
+              Jedna stawka za godzinę zegarową — online i stacjonarnie tak
+              samo. Płatność po lekcji.
             </p>
 
             <div
@@ -598,21 +605,27 @@ export default async function HomePage() {
         </section>
 
         {/* ── Opinie ───────────────────────────────────────────────────── */}
-        <section className="bg-front-sun-soft">
+        <section className="bg-[var(--front-band-warm)]">
           <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 sm:py-24">
             <h2 className="max-w-[16ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
-              Co mówią uczniowie i rodzice
+              Co mówią uczniowie i rodzice
             </h2>
             <p className="mt-4 flex flex-wrap items-center gap-2 text-front-muted">
               <span className={sampleTag}>opinie przykładowe</span>
               tu wejdą wypowiedzi zatwierdzone w panelu
             </p>
 
-            <div className="mt-12 grid gap-5 md:grid-cols-3">
-              {REVIEWS.map((review) => (
+            <div className="mt-12 grid gap-6 md:grid-cols-3 md:items-start">
+              {REVIEWS.map((review, index) => (
                 <figure
                   key={review.author}
-                  className={cn(cardBase, "flex flex-col p-6")}
+                  className={cn(
+                    cardBase,
+                    "flex flex-col p-6",
+                    ["-rotate-1", "rotate-[0.7deg] md:mt-8", "-rotate-[0.5deg] md:mt-16"][
+                      index
+                    ]
+                  )}
                 >
                   <div aria-hidden className="flex gap-0.5 text-front-sun">
                     {Array.from({ length: 5 }).map((_, index) => (
@@ -672,14 +685,14 @@ export default async function HomePage() {
         </section>
 
         {/* ── Kontakt ──────────────────────────────────────────────────── */}
-        <section id="kontakt" className="bg-front-ground px-5 pb-20 sm:px-6 sm:pb-24">
-          <div className="mx-auto w-full max-w-6xl overflow-hidden rounded-[32px] bg-front-brand px-6 py-16 text-center sm:px-12">
-            <h2 className="mx-auto max-w-[18ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance text-white sm:text-5xl">
-              Napisz, z czym jest problem
+        <section id="kontakt" className="bg-front-ground px-5 pt-20 pb-20 sm:px-6 sm:pt-24 sm:pb-24">
+          <div className="mx-auto w-full max-w-6xl overflow-hidden rounded-[32px] bg-[var(--front-cta)] px-6 py-16 text-center sm:px-12">
+            <h2 className="mx-auto max-w-[18ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance text-[var(--front-on-cta)] sm:text-5xl">
+              Napisz, z czym jest problem
             </h2>
-            <p className="mx-auto mt-4 max-w-[52ch] text-lg leading-relaxed text-[#ddd7ff]">
-              Odpowiadamy tego samego dnia i od razu proponujemy wolny termin.
-              Pierwsza lekcja nie zobowiązuje do niczego dalej.
+            <p className="mx-auto mt-4 max-w-[52ch] text-lg leading-relaxed text-[var(--front-on-cta-muted)]">
+              Odpowiadamy tego samego dnia i od razu proponujemy wolny
+              termin. Pierwsza lekcja nie zobowiązuje do niczego dalej.
             </p>
 
             <div className="mt-9 flex flex-wrap justify-center gap-3">
@@ -687,7 +700,7 @@ export default async function HomePage() {
                 href="tel:+48000000000"
                 className={cn(
                   btnPrimary,
-                  "bg-white text-front-brand shadow-[0_4px_0_0_#c8bffb] hover:bg-[#f4f1ff] active:shadow-[0_1px_0_0_#c8bffb]"
+                  "bg-[var(--front-on-cta)] text-[var(--front-cta)] shadow-[0_4px_0_0_var(--front-cta-pill-edge)] hover:bg-[var(--front-on-cta-muted)] active:shadow-[0_1px_0_0_var(--front-cta-pill-edge)]"
                 )}
               >
                 <Phone />
@@ -697,7 +710,7 @@ export default async function HomePage() {
                 href="mailto:kontakt@korkinapatencie.pl"
                 className={cn(
                   btnSecondary,
-                  "border-[#7a68ee] bg-transparent text-white shadow-[0_4px_0_0_#4432c2] hover:border-white active:shadow-[0_1px_0_0_#4432c2]"
+                  "border-[var(--front-cta-border)] bg-transparent text-[var(--front-on-cta)] shadow-[0_4px_0_0_var(--front-cta-edge)] hover:border-[var(--front-on-cta)] active:shadow-[0_1px_0_0_var(--front-cta-edge)]"
                 )}
               >
                 <Mail />
@@ -705,9 +718,9 @@ export default async function HomePage() {
               </a>
             </div>
 
-            <p className="mt-7 flex items-center justify-center gap-2 font-semibold text-[#ddd7ff]">
+            <p className="mt-7 flex items-center justify-center gap-2 font-semibold text-[var(--front-on-cta-muted)]">
               <MapPin className="size-5" />
-              Online w całej Polsce · stacjonarnie w Krakowie
+              Online w całej Polsce · stacjonarnie w Krakowie
             </p>
           </div>
         </section>

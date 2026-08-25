@@ -38,3 +38,6 @@ next-env.d.ts
 
 # prisma
 /lib/generated/
+
+# impeccable — zrzuty i artefakty recenzji
+/.impeccable/
