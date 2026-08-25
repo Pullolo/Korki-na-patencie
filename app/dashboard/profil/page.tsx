@@ -3,8 +3,8 @@ import { redirect } from "next/navigation"
 import { ensureDashboardPage } from "@/lib/auth"
 
 /**
- * Skrót „Mój profil" dla nauczyciela — nie chcemy, żeby musiał znać własne id.
- * Admin nie ma profilu nauczyciela, więc ląduje na liście.
+ * Skrót „Mój profil" — nie chcemy, żeby ktokolwiek musiał znać własne id.
+ * Kto nie ma profilu (zwykle admin, który nie uczy), ląduje na liście.
  */
 export default async function MyProfilePage() {
   const ctx = await ensureDashboardPage()

@@ -5,6 +5,7 @@ import { Header } from "@/components/dashboard/header"
 import { EmptyState, Panel } from "@/components/dashboard/panel"
 import { RoleSelect } from "@/components/dashboard/role-select"
 import { StatusBadge } from "@/components/dashboard/status-badge"
+import { TeacherProfileToggle } from "@/components/dashboard/teacher-profile-toggle"
 import { ensureAdminPage } from "@/lib/auth"
 import { formatDate, plural } from "@/lib/format"
 import { USER_ROLE_LABELS, USER_ROLE_TONES } from "@/lib/labels"
@@ -33,7 +34,7 @@ export default async function UsersPage() {
             />
           ) : (
             <div className="w-full overflow-x-auto">
-              <table className="w-full min-w-[42rem] text-sm">
+              <table className="w-full min-w-[54rem] text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-muted-foreground">
                     <th className="px-4 py-3 font-medium sm:px-5">
@@ -41,6 +42,9 @@ export default async function UsersPage() {
                     </th>
                     <th className="px-4 py-3 font-medium">Obecna rola</th>
                     <th className="px-4 py-3 font-medium">Zmień rolę</th>
+                    <th className="px-4 py-3 font-medium">
+                      Profil nauczyciela
+                    </th>
                     <th className="px-4 py-3 font-medium sm:px-5">
                       Data rejestracji
                     </th>
@@ -84,6 +88,13 @@ export default async function UsersPage() {
                             role={user.role}
                             disabled={isSelf}
                             disabledHint="Nie możesz zmienić własnej roli."
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <TeacherProfileToggle
+                            userId={user.id}
+                            role={user.role}
+                            profileId={user.teacherProfile?.id ?? null}
                           />
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-muted-foreground sm:px-5">

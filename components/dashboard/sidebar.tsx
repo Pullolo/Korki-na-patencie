@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 
 export type SidebarProps = {
   role: UserRole
+  hasTeacherProfile?: boolean
   siteName: string
   userName: string
   pendingBookings?: number
@@ -32,6 +33,7 @@ function badgeCount(
 
 function SidebarContent({
   role,
+  hasTeacherProfile = false,
   siteName,
   userName,
   pendingBookings = 0,
@@ -40,7 +42,7 @@ function SidebarContent({
   onNavigate,
 }: SidebarProps & { onNavigate?: () => void }) {
   const pathname = usePathname()
-  const groups = visibleGroups(role)
+  const groups = visibleGroups(role, hasTeacherProfile)
   const counts = {
     bookings: pendingBookings,
     inquiries: newInquiries,

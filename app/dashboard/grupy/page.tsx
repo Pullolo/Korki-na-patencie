@@ -40,11 +40,12 @@ export default async function GroupsPage({
     ? await getTeacherOptions().catch(() => [])
     : []
 
-  // Nowa grupa musi mieć właściciela, więc admin najpierw wybiera nauczyciela.
+  // Nowa grupa musi mieć właściciela, więc admin najpierw wybiera nauczyciela —
+  // domyślnie siebie, jeśli sam ma profil.
   const ownerId = ctx.isAdmin
     ? requestedId && requestedId !== ALL_TEACHERS
       ? requestedId
-      : (teacherOptions[0]?.id ?? null)
+      : (ctx.teacherProfileId ?? teacherOptions[0]?.id ?? null)
     : ctx.teacherProfileId
 
   const [groups, subjects, levels, students, owner, settings] =

@@ -27,6 +27,7 @@ export default async function DashboardLayout({
     <div className="min-h-screen w-full bg-background">
       <Sidebar
         role={ctx.role}
+        hasTeacherProfile={Boolean(ctx.teacherProfileId)}
         siteName={settings.siteName}
         userName={ctx.fullName}
         pendingBookings={counts.bookings}
