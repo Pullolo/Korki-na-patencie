@@ -19,6 +19,12 @@ Język całej aplikacji (frontend + dashboard): **polski**.
 | `TEACHER` | tylko swoje: kalendarz, dostępność, rezerwacje, swój profil i cennik, swoi uczniowie, swoje opinie (podgląd) |
 | `STUDENT` | brak dostępu do `/dashboard` (redirect na `/`); front + własne konto (etap 3) |
 
+Rola i profil nauczyciela to dwie osobne rzeczy. `TEACHER` bez `TeacherProfile` nie miałby
+czego pokazać, więc profil zakłada się razem z rolą. Admin dostaje profil tylko na życzenie —
+nadaje się go w `/dashboard/uzytkownicy` i wtedy admin prowadzi zajęcia jak każdy nauczyciel,
+nie tracąc przy tym pełnego wglądu. Admin bez profilu dalej widzi wszystko, po prostu nie ma
+własnego grafiku. Uprawnienia liczymy z roli, „czy uczy" — z `ctx.teacherProfileId`.
+
 Ochrona dwuwarstwowa:
 
 1. `proxy.ts` (dawne `middleware.ts` — w Next 16 zmieniona nazwa) — szybki, optymistyczny redirect.

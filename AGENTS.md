@@ -15,6 +15,10 @@ danych: `docs/PLAN.md`.
   Ścieżki w `/dashboard` też są polskie (`/dashboard/rezerwacje`, `/dashboard/uzytkownicy`).
 - Role: `ADMIN`, `TEACHER`, `STUDENT`. Źródłem prawdy jest `publicMetadata.role`
   w Clerku, kopia leży w tabeli `users`.
+- `TeacherProfile` nie wynika z roli. Rola `TEACHER` zakłada profil automatycznie,
+  a admin może go sobie nadać (albo nie) przez `setTeacherProfile()` w
+  `/dashboard/uzytkownicy`. Pytaj więc o `ctx.teacherProfileId`, nie o rolę,
+  kiedy chodzi o „czy ta osoba prowadzi zajęcia".
 - Autoryzacja: `proxy.ts` robi tylko optymistyczny redirect. Prawdziwą bramką są
   `ensureDashboardPage()` / `ensureAdminPage()` z `lib/auth.ts` w RSC oraz
   `requireDashboardUser()` / `requireAdmin()` / `requireTeacherAccess()` w każdej

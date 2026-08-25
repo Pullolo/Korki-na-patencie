@@ -37,12 +37,13 @@ export default async function AvailabilityPage({
   const requested = (await searchParams).nauczyciel
   const requestedId = typeof requested === "string" ? requested : undefined
 
-  // Nauczyciel zawsze ogląda swój grafik; admin wybiera, czyj chce zobaczyć.
+  // Nauczyciel zawsze ogląda swój grafik; admin wybiera, czyj chce zobaczyć —
+  // a jeśli sam prowadzi zajęcia, domyślnie ląduje na własnym.
   const teacherOptions = ctx.isAdmin
     ? await getTeacherOptions().catch(() => [])
     : []
   const teacherProfileId = ctx.isAdmin
-    ? (requestedId ?? teacherOptions[0]?.id)
+    ? (requestedId ?? ctx.teacherProfileId ?? teacherOptions[0]?.id)
     : ctx.teacherProfileId
 
   if (!teacherProfileId) {
@@ -56,7 +57,7 @@ export default async function AvailabilityPage({
               title="Brak profilu nauczyciela"
               description={
                 ctx.isAdmin
-                  ? "Żaden użytkownik nie ma jeszcze roli Nauczyciel — nadaj ją w sekcji Użytkownicy."
+                  ? "Nikt nie ma jeszcze profilu nauczyciela — nadaj rolę Nauczyciel albo załóż profil sobie w sekcji Użytkownicy."
                   : "Twoje konto nie ma podpiętego profilu nauczyciela. Odezwij się do administratora."
               }
             />

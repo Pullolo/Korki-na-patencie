@@ -37,7 +37,7 @@ export type DashboardContext = {
   email: string
   fullName: string
   imageUrl: string | null
-  /** Ustawione tylko dla roli TEACHER z założonym profilem. */
+  /** Profil nauczyciela, jeśli konto go ma — także dla admina, który uczy. */
   teacherProfileId: string | null
   isAdmin: boolean
 }

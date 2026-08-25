@@ -190,13 +190,17 @@ export const NAVIGATION: NavGroup[] = [
   },
 ]
 
-export function visibleGroups(role: UserRole) {
+/**
+ * `hasTeacherProfile` jest niezależne od roli — admin, który sam prowadzi
+ * zajęcia, dostaje skróty nauczyciela; admin bez profilu ich nie potrzebuje.
+ */
+export function visibleGroups(role: UserRole, hasTeacherProfile = false) {
   const isAdmin = role === "ADMIN"
   return NAVIGATION.map((group) => ({
     ...group,
     items: group.items.filter((item) => {
       if (item.adminOnly && !isAdmin) return false
-      if (item.teacherOnly && isAdmin) return false
+      if (item.teacherOnly && isAdmin && !hasTeacherProfile) return false
       return true
     }),
   })).filter((group) => group.items.length > 0)
