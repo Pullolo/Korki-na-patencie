@@ -74,8 +74,10 @@ jest jawna przed kontaktem i zapisuje się jako migawka przy rezerwacji.
   nazwa obiecuje spryt i lekkość, nie akademicką powagę.
 - Język: polski, w całości. Ton ma być jednocześnie przyjazny i zabawny oraz
   elegancki i profesjonalny — bez korpo-mowy i bez infantylizacji ucznia.
-- Strona publiczna: **wymuszony jasny motyw**, niezależny od przełącznika w panelu
-  (decyzja właściciela z 2026-08-25).
+- Strona publiczna ma **oba motywy — jasny i ciemny** — z przełącznikiem w
+  nagłówku, wspólnym z panelem (`next-themes`). Paleta frontu jest własna i nie
+  dziedziczy tokenów panelu (decyzja właściciela z 2026-08-25; wcześniejsze
+  „tylko jasny” zostało tego samego dnia zmienione).
 - **Trwała preferencja kierunku (2026-08-25):** strona publiczna trzyma się
   standardu kategorii zagranego prosto — bez ironii i bez przemyconej ekscentryki.
   Poprzeczką rzemiosła są **Duolingo, Khan Academy i Brainly**: żywy kolor,

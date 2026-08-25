@@ -117,62 +117,125 @@
 }
 
 /* ─── Strona publiczna ────────────────────────────────────────────────────────
-   Front ma własny, stały jasny motyw — nie dziedziczy tokenów panelu i nie
-   reaguje na klasę `.dark`. Wartości są wpisane wprost, więc przełącznik motywu
-   w `/dashboard` nie ma jak ich ruszyć. */
+   Front ma własną paletę, osobną od gęstego panelu, ale dzieli z nim
+   przełącznik motywu (`next-themes`, klasa `.dark` na <html>). Tokeny panelu
+   nie przeciekają tutaj i odwrotnie. */
 
 @theme inline {
     --font-display: var(--font-fredoka);
     --font-body: var(--font-nunito);
 
-    --color-front-ground: #fbfaff;
-    --color-front-surface: #ffffff;
-    --color-front-ink: #1a1830;
-    --color-front-muted: #5a5878;
-    --color-front-line: #e8e6f4;
+    --color-front-ground: var(--front-ground);
+    --color-front-surface: var(--front-surface);
+    --color-front-ink: var(--front-ink);
+    --color-front-muted: var(--front-muted);
+    --color-front-line: var(--front-line);
+    --color-front-line-strong: var(--front-line-strong);
 
-    --color-front-brand: #5b47e0;
-    --color-front-brand-dark: #4432c2;
-    --color-front-brand-soft: #eeebff;
+    --color-front-brand: var(--front-brand);
+    --color-front-brand-solid: var(--front-brand-solid);
+    --color-front-brand-soft: var(--front-brand-soft);
 
-    --color-front-sun: #f0a500;
-    --color-front-sun-soft: #fff3d6;
-    --color-front-coral: #e0503a;
-    --color-front-coral-soft: #ffe7e2;
-    --color-front-mint: #0f9e80;
-    --color-front-mint-soft: #dff7f0;
-    --color-front-sky: #1c7fd6;
-    --color-front-sky-soft: #e3f1ff;
+    --color-front-sun: var(--front-sun);
+    --color-front-sun-soft: var(--front-sun-soft);
+    --color-front-coral: var(--front-coral);
+    --color-front-coral-soft: var(--front-coral-soft);
+    --color-front-mint: var(--front-mint);
+    --color-front-mint-soft: var(--front-mint-soft);
+    --color-front-sky: var(--front-sky);
+    --color-front-sky-soft: var(--front-sky-soft);
+}
+
+:root {
+    --front-ground: #fbfaff;
+    --front-surface: #ffffff;
+    --front-ink: #1a1830;
+    --front-muted: #5a5878;
+    --front-line: #e8e6f4;
+    --front-line-strong: #d6d2ee;
+
+    --front-brand: #5b47e0;
+    --front-brand-solid: #5b47e0;
+    --front-brand-hover: #6a58ea;
+    --front-brand-edge: #4432c2;
+    --front-brand-soft: #eeebff;
+    --front-on-brand: #ffffff;
+
+    --front-sun: #c97f00;
+    --front-sun-soft: #fff3d6;
+    --front-coral: #d1452f;
+    --front-coral-soft: #ffe7e2;
+    --front-mint: #0a7d66;
+    --front-mint-soft: #dff7f0;
+    --front-sky: #1568b5;
+    --front-sky-soft: #e3f1ff;
+
+    --front-dots: #dedaf6;
+    --front-selection: #ddd7ff;
+    --front-scroll-thumb: #c6bff2;
+    --front-scroll-track: #f1eefc;
+}
+
+.dark {
+    --front-ground: #131120;
+    --front-surface: #1c1930;
+    --front-ink: #f4f2ff;
+    --front-muted: #a9a4c6;
+    --front-line: #2e2a45;
+    --front-line-strong: #413b5f;
+
+    --front-brand: #a99bff;
+    --front-brand-solid: #6a57f0;
+    --front-brand-hover: #7a68f7;
+    --front-brand-edge: #4835c9;
+    --front-brand-soft: #241f3d;
+    --front-on-brand: #ffffff;
+
+    --front-sun: #ffc04d;
+    --front-sun-soft: #33291a;
+    --front-coral: #ff9179;
+    --front-coral-soft: #3a2320;
+    --front-mint: #4fd9b8;
+    --front-mint-soft: #14332c;
+    --front-sky: #7cc0ff;
+    --front-sky-soft: #16283c;
+
+    --front-dots: #2a2542;
+    --front-selection: #3a3160;
+    --front-scroll-thumb: #3b3459;
+    --front-scroll-track: #1a1729;
 }
 
 html:has([data-surface="front"]) {
-    background-color: #fbfaff;
-    scrollbar-color: #c6bff2 #f1eefc;
+    color-scheme: light;
+    background-color: var(--front-ground);
+    scrollbar-color: var(--front-scroll-thumb) var(--front-scroll-track);
+}
+
+html.dark:has([data-surface="front"]) {
+    color-scheme: dark;
 }
 
 html:has([data-surface="front"]) body {
-    background-color: #fbfaff;
-    color: #1a1830;
+    background-color: var(--front-ground);
+    color: var(--front-ink);
 }
 
 [data-surface="front"] {
-    color-scheme: light;
-    caret-color: #5b47e0;
+    caret-color: var(--front-brand);
 }
 
 [data-surface="front"] ::selection {
-    background-color: #ddd7ff;
-    color: #1a1830;
+    background-color: var(--front-selection);
+    color: var(--front-ink);
 }
 
 [data-surface="front"] :focus-visible {
-    outline: 3px solid #5b47e0;
+    outline: 3px solid var(--front-brand);
     outline-offset: 2px;
     border-radius: 0.5rem;
 }
 
-/* Jedyny autorski moment ruchu na stronie: godziny wjeżdżają do siatki, kiedy
-   zmienisz przedmiot albo dzień. Reszta strony stoi spokojnie. */
 @keyframes front-slot-in {
     from {
         opacity: 0;

@@ -20,6 +20,7 @@ import {
 import { Fredoka, Nunito } from "next/font/google"
 import Link from "next/link"
 
+import { ArrowDoodle, Squiggle } from "@/components/front/doodles"
 import { SlotPicker } from "@/components/front/slot-picker"
 import {
   btnPrimary,
@@ -29,13 +30,14 @@ import {
   chip,
   sampleTag,
 } from "@/components/front/styles"
+import { ThemeToggle } from "@/components/front/theme-toggle"
 import { canAccessDashboard, roleFromClerk } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 
 // Strona publiczna. Kierunek wizualny: standard kategorii edukacyjnej zagrany
 // prosto (poprzeczka: Duolingo, Khan Academy, Brainly) — patrz kontrakt w
-// `app/layout.tsx` i PRODUCT.md. Motyw jest na stałe jasny, niezależnie od
-// przełącznika w panelu.
+// `app/layout.tsx` i PRODUCT.md. Front ma własną paletę, ale dzieli z panelem
+// przełącznik jasny/ciemny (`next-themes`).
 //
 // Treść jest wpisana na twardo do czasu etapu 3. Wszystko oznaczone `sampleTag`
 // (nauczyciele, opinie) oraz kontakt i miasto to zaślepki do podmiany.
@@ -118,7 +120,7 @@ const TEACHERS = [
   {
     initials: "AK",
     name: "Anna Kowalska",
-    tone: "bg-front-brand text-white",
+    tone: "bg-front-brand-soft text-front-brand",
     subjects: ["Matematyka", "Fizyka"],
     bio: "Uczy do matury rozszerzonej od ośmiu lat. Prowadzi też grupę maturalną w czwartki.",
     free: 6,
@@ -126,7 +128,7 @@ const TEACHERS = [
   {
     initials: "PN",
     name: "Piotr Nowak",
-    tone: "bg-front-sky text-white",
+    tone: "bg-front-sky-soft text-front-sky",
     subjects: ["Fizyka", "Matematyka"],
     bio: "Egzamin ósmoklasisty i liceum. Lubi zaczynać od zadań, które uczeń już prawie umie.",
     free: 4,
@@ -134,7 +136,7 @@ const TEACHERS = [
   {
     initials: "MZ",
     name: "Marta Zielińska",
-    tone: "bg-front-mint text-white",
+    tone: "bg-front-mint-soft text-front-mint",
     subjects: ["Informatyka"],
     bio: "Python, C++ i algorytmy. Przygotowuje do matury rozszerzonej i olimpiady.",
     free: 5,
@@ -181,7 +183,7 @@ const REVIEWS = [
       "Syn wszedł na zajęcia z jedynką ze sprawdzianu, a po dwóch miesiącach tłumaczył koledze funkcje kwadratowe.",
     author: "Anna",
     role: "mama ucznia, 2. klasa liceum",
-    tone: "bg-front-brand text-white",
+    tone: "bg-front-brand-soft text-front-brand",
     initials: "A",
   },
   {
@@ -189,7 +191,7 @@ const REVIEWS = [
       "Najbardziej pomogło to, że nie robiliśmy wszystkiego po kolei, tylko tego, co mi nie wychodziło.",
     author: "Kuba",
     role: "matura rozszerzona z matematyki",
-    tone: "bg-front-sky text-white",
+    tone: "bg-front-sky-soft text-front-sky",
     initials: "K",
   },
   {
@@ -197,7 +199,7 @@ const REVIEWS = [
       "Online działa u nas lepiej niż dojazdy. Tablica, zapis lekcji i zadania na kolejny tydzień w jednym miejscu.",
     author: "Marta",
     role: "mama ósmoklasistki",
-    tone: "bg-front-mint text-white",
+    tone: "bg-front-mint-soft text-front-mint",
     initials: "M",
   },
 ]
@@ -256,7 +258,7 @@ export default async function HomePage() {
             <span className="flex size-10 items-center justify-center rounded-2xl bg-front-brand text-white shadow-[0_3px_0_0_var(--color-front-brand-dark)]">
               <GraduationCap className="size-5" />
             </span>
-            <span className="font-display text-lg font-semibold tracking-tight">
+            <span className="font-display text-base font-semibold tracking-tight whitespace-nowrap sm:text-lg">
               Korki na patencie
             </span>
           </Link>
@@ -273,7 +275,8 @@ export default async function HomePage() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle />
             {showDashboardLink && (
               <Link
                 href="/dashboard"
@@ -301,7 +304,10 @@ export default async function HomePage() {
               <SignUpButton mode="modal">
                 <button
                   type="button"
-                  className={cn(btnSmall, "bg-front-brand text-white hover:bg-[#6a58ea]")}
+                  className={cn(
+                    btnSmall,
+                    "bg-[var(--front-brand-solid)] px-3 text-[var(--front-on-brand)] whitespace-nowrap hover:bg-[var(--front-brand-hover)] sm:px-4"
+                  )}
                 >
                   Umów lekcję
                 </button>
@@ -319,19 +325,24 @@ export default async function HomePage() {
         <section className="relative overflow-hidden bg-front-ground">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 [background-image:radial-gradient(#dedaf6_1.1px,transparent_1.1px)] [background-size:22px_22px] opacity-70"
+            className="pointer-events-none absolute inset-0 [background-image:radial-gradient(var(--front-dots)_1.1px,transparent_1.1px)] [background-size:22px_22px] opacity-60"
           />
           <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-5 py-16 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-16 lg:py-24">
             <div>
-              <h1 className="font-display text-[2.6rem] leading-[1.05] font-semibold tracking-[-0.02em] text-balance sm:text-6xl">
-                Zobacz wolną godzinę i zapisz się w minutę
+              <h1 className="font-display text-[2.6rem] leading-[1.18] font-semibold tracking-[-0.02em] text-balance sm:text-6xl">
+                Zobacz{" "}
+                <span className="relative inline-block whitespace-nowrap">
+                  wolną godzinę
+                  <Squiggle className="absolute -bottom-1 left-0 h-[0.3em] w-full text-front-brand" />
+                </span>{" "}
+                <span className="whitespace-nowrap">i zapisz się</span> w minutę
               </h1>
 
-              <p className="mt-5 max-w-[46ch] text-lg leading-relaxed text-front-muted">
+              <p className="mt-7 max-w-[46ch] text-lg leading-relaxed text-front-muted">
                 Matematyka, fizyka i informatyka — z nauczycielem, który tłumaczy
                 do skutku. Grafik na stronie jest prawdziwy: godzina, którą
-                widzisz, jest naprawdę wolna, a cenę znasz przed pierwszą
-                wiadomością.
+                widzisz, jest naprawdę wolna, a cenę znasz, zanim napiszesz
+                pierwszą wiadomość.
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -357,7 +368,16 @@ export default async function HomePage() {
               </ul>
             </div>
 
-            <SlotPicker />
+            <div>
+              <div className="mb-2 hidden items-end gap-2 pl-6 lg:flex">
+                <ArrowDoodle className="h-12 w-14 shrink-0 -scale-x-100 text-front-brand" />
+                <p className="max-w-[24ch] pb-3 font-display text-base leading-snug font-semibold text-front-muted">
+                  tu wybierasz godzinę, a nie wypełniasz formularz
+                </p>
+              </div>
+
+              <SlotPicker />
+            </div>
           </div>
         </section>
 
@@ -365,7 +385,8 @@ export default async function HomePage() {
         <section id="przedmioty" className="bg-front-surface">
           <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 sm:py-24">
             <h2 className="max-w-[20ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
-              Trzy przedmioty, w których jesteśmy naprawdę dobrzy
+              Trzy przedmioty, w których jesteśmy{" "}
+              <Marker tone="bg-front-mint-soft">naprawdę dobrzy</Marker>
             </h2>
             <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-front-muted">
               Nie bierzemy wszystkiego, co się nawinie. Za to w tych trzech
@@ -419,7 +440,7 @@ export default async function HomePage() {
         </section>
 
         {/* ── Jak to działa ────────────────────────────────────────────── */}
-        <section id="jak-to-dziala" className="bg-front-ground">
+        <section id="jak-to-dziala" className="bg-front-brand-soft">
           <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 sm:py-24">
             <h2 className="max-w-[18ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
               Od pierwszej wiadomości do pierwszej lekcji
@@ -428,7 +449,7 @@ export default async function HomePage() {
             <ol className="relative mt-12 grid gap-8 md:grid-cols-3 md:gap-6">
               <div
                 aria-hidden
-                className="absolute top-6 right-12 left-12 hidden border-t-2 border-dashed border-[#d8d3f0] md:block"
+                className="absolute top-6 right-12 left-12 hidden border-t-2 border-dashed border-front-line-strong md:block"
               />
               {STEPS.map((step, index) => (
                 <li key={step.title} className="relative">
@@ -450,12 +471,13 @@ export default async function HomePage() {
         {/* ── Nauczyciele ──────────────────────────────────────────────── */}
         <section id="nauczyciele" className="bg-front-surface">
           <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 sm:py-24">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <h2 className="max-w-[16ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
-                Ludzie, którzy będą uczyć
-              </h2>
+            <h2 className="max-w-[16ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
+              Ludzie, którzy będą uczyć
+            </h2>
+            <p className="mt-4 flex flex-wrap items-center gap-2 text-front-muted">
               <span className={sampleTag}>profile przykładowe</span>
-            </div>
+              prawdziwe wejdą z panelu, razem z ich grafikiem
+            </p>
 
             <div className="mt-12 grid gap-5 md:grid-cols-3">
               {TEACHERS.map((teacher) => (
@@ -500,7 +522,8 @@ export default async function HomePage() {
         <section id="cennik" className="bg-front-ground">
           <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 sm:py-24">
             <h2 className="max-w-[20ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
-              Cena zależy od poziomu, nie od tego, jak pilne
+              Cena zależy <Marker tone="bg-front-sky-soft">od poziomu</Marker>, nie
+              od tego, jak pilne
             </h2>
             <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-front-muted">
               Jedna stawka za godzinę zegarową — online i stacjonarnie tak samo.
@@ -575,14 +598,15 @@ export default async function HomePage() {
         </section>
 
         {/* ── Opinie ───────────────────────────────────────────────────── */}
-        <section className="bg-front-surface">
+        <section className="bg-front-sun-soft">
           <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 sm:py-24">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <h2 className="max-w-[16ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
-                Co mówią uczniowie i rodzice
-              </h2>
+            <h2 className="max-w-[16ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
+              Co mówią uczniowie i rodzice
+            </h2>
+            <p className="mt-4 flex flex-wrap items-center gap-2 text-front-muted">
               <span className={sampleTag}>opinie przykładowe</span>
-            </div>
+              tu wejdą wypowiedzi zatwierdzone w panelu
+            </p>
 
             <div className="mt-12 grid gap-5 md:grid-cols-3">
               {REVIEWS.map((review) => (
@@ -621,7 +645,7 @@ export default async function HomePage() {
         </section>
 
         {/* ── FAQ ──────────────────────────────────────────────────────── */}
-        <section id="pytania" className="bg-front-ground">
+        <section id="pytania" className="bg-front-surface">
           <div className="mx-auto w-full max-w-3xl px-5 py-20 sm:px-6 sm:py-24">
             <h2 className="font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
               Pytania, które padają najczęściej
@@ -648,7 +672,7 @@ export default async function HomePage() {
         </section>
 
         {/* ── Kontakt ──────────────────────────────────────────────────── */}
-        <section id="kontakt" className="bg-front-surface px-5 pb-20 sm:px-6 sm:pb-24">
+        <section id="kontakt" className="bg-front-ground px-5 pb-20 sm:px-6 sm:pb-24">
           <div className="mx-auto w-full max-w-6xl overflow-hidden rounded-[32px] bg-front-brand px-6 py-16 text-center sm:px-12">
             <h2 className="mx-auto max-w-[18ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance text-white sm:text-5xl">
               Napisz, z czym jest problem
@@ -710,11 +734,35 @@ export default async function HomePage() {
             ))}
           </nav>
 
-          <p className="text-sm text-front-muted">
-            © {new Date().getFullYear()} Korki na patencie
+          <p className="max-w-[40ch] text-sm text-front-muted">
+            © {new Date().getFullYear()} Korki na patencie · zrobione dla tych,
+            którym nikt nie wytłumaczył za pierwszym razem
           </p>
         </div>
       </footer>
     </div>
+  )
+}
+
+// Ślad zakreślacza pod słowem w nagłówku — leży pod tekstem, więc nie rusza
+// kontrastu ani zaznaczania.
+function Marker({
+  children,
+  tone,
+}: {
+  children: React.ReactNode
+  tone: string
+}) {
+  return (
+    <span className="relative inline-block">
+      <span
+        aria-hidden
+        className={cn(
+          "absolute inset-x-[-0.12em] bottom-[0.12em] z-0 h-[0.46em] -rotate-1 rounded-[0.15em]",
+          tone
+        )}
+      />
+      <span className="relative z-10">{children}</span>
+    </span>
   )
 }
