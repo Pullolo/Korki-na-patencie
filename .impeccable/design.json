@@ -1,0 +1,258 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-26T00:00:00.000Z",
+  "title": "Design System: Korki na patencie — strona publiczna",
+  "extensions": {
+    "colorMeta": {
+      "front-brand": {
+        "role": "primary",
+        "displayName": "Winogron",
+        "canonical": "#5b47e0",
+        "darkValue": "#a99bff",
+        "tonalRamp": ["#181041", "#241a63", "#33268a", "#4432c2", "#5b47e0", "#8375ec", "#b3aaf5", "#eeebff"]
+      },
+      "front-brand-edge": {
+        "role": "primary",
+        "displayName": "Winogron krawędź",
+        "canonical": "#4432c2",
+        "darkValue": "#4835c9",
+        "tonalRamp": ["#140e3a", "#1d1455", "#2a1e7f", "#3726a3", "#4432c2", "#6a58e0", "#9c90f0", "#e4e0fb"]
+      },
+      "front-brand-soft": {
+        "role": "primary",
+        "displayName": "Winogron mgła",
+        "canonical": "#eeebff",
+        "darkValue": "#241f3d",
+        "tonalRamp": ["#1a1533", "#241f3d", "#37305c", "#524a85", "#7a71b4", "#a89fdb", "#d0caf4", "#eeebff"]
+      },
+      "front-sun": {
+        "role": "secondary",
+        "displayName": "Słońce",
+        "canonical": "#c97f00",
+        "darkValue": "#ffc04d",
+        "tonalRamp": ["#3a2400", "#553600", "#7a4d00", "#a06600", "#c97f00", "#eba22b", "#ffc04d", "#fff3d6"]
+      },
+      "front-coral": {
+        "role": "secondary",
+        "displayName": "Koral",
+        "canonical": "#d1452f",
+        "darkValue": "#ff9179",
+        "tonalRamp": ["#3d0f07", "#5a1810", "#7f2418", "#a63321", "#d1452f", "#ee6a52", "#ff9179", "#ffe7e2"]
+      },
+      "front-mint": {
+        "role": "secondary",
+        "displayName": "Mięta",
+        "canonical": "#0a7d66",
+        "darkValue": "#4fd9b8",
+        "tonalRamp": ["#03251e", "#05392f", "#075443", "#087059", "#0a7d66", "#199c81", "#4fd9b8", "#dff7f0"]
+      },
+      "front-sky": {
+        "role": "secondary",
+        "displayName": "Błękit",
+        "canonical": "#1568b5",
+        "darkValue": "#7cc0ff",
+        "tonalRamp": ["#04203c", "#062f57", "#0a457c", "#0f569a", "#1568b5", "#3b8ad6", "#7cc0ff", "#e3f1ff"]
+      },
+      "front-cta": {
+        "role": "tertiary",
+        "displayName": "Pasmo CTA",
+        "canonical": "#5b47e0",
+        "darkValue": "#4f3dcf",
+        "tonalRamp": ["#181041", "#241a63", "#33268a", "#4432c2", "#5b47e0", "#7a68ee", "#c8bffb", "#ddd7ff"]
+      },
+      "front-ground": {
+        "role": "neutral",
+        "displayName": "Grunt",
+        "canonical": "#fbfaff",
+        "darkValue": "#131120",
+        "tonalRamp": ["#0d0b18", "#131120", "#1c1930", "#2e2a45", "#413b5f", "#8b86a8", "#d6d2ee", "#fbfaff"]
+      },
+      "front-surface": {
+        "role": "neutral",
+        "displayName": "Powierzchnia",
+        "canonical": "#ffffff",
+        "darkValue": "#1c1930",
+        "tonalRamp": ["#0d0b18", "#1c1930", "#2e2a45", "#413b5f", "#6d6790", "#a9a4c6", "#e8e6f4", "#ffffff"]
+      },
+      "front-ink": {
+        "role": "neutral",
+        "displayName": "Atrament",
+        "canonical": "#1a1830",
+        "darkValue": "#f4f2ff",
+        "tonalRamp": ["#0b0a17", "#1a1830", "#2e2a45", "#413b5f", "#5a5878", "#8b86a8", "#d6d2ee", "#f4f2ff"]
+      },
+      "front-muted": {
+        "role": "neutral",
+        "displayName": "Przygaszony",
+        "canonical": "#5a5878",
+        "darkValue": "#a9a4c6",
+        "tonalRamp": ["#141324", "#221f3a", "#332f52", "#45416b", "#5a5878", "#8b86a8", "#c3bfd9", "#eeecf6"]
+      },
+      "front-line": {
+        "role": "neutral",
+        "displayName": "Linia",
+        "canonical": "#e8e6f4",
+        "darkValue": "#2e2a45",
+        "tonalRamp": ["#141225", "#1f1c33", "#2e2a45", "#413b5f", "#6d6790", "#a49ec4", "#d6d2ee", "#e8e6f4"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display — Fredoka 600", "purpose": "Wyłącznie h1 w hero, zawsze z text-balance." },
+      "headline": { "displayName": "Headline — Fredoka 600", "purpose": "Nagłówki sekcji h2, miara 16–20ch." },
+      "title": { "displayName": "Title — Fredoka 600", "purpose": "Nazwy przedmiotów, kroków, poziomów cennika, pytania FAQ." },
+      "numeral": { "displayName": "Numeral — Fredoka 600", "purpose": "Kwoty i wybrany termin. Ceny nigdy nie idą krojem Nunito." },
+      "body": { "displayName": "Body — Nunito 400", "purpose": "Akapity i cytaty; miara 46–68ch zawsze zadeklarowana." },
+      "label": { "displayName": "Label — Nunito 700", "purpose": "Przyciski, chipy, nawigacja, metadane; godziny z tabular-nums." },
+      "micro": { "displayName": "Micro — Nunito 700 wersaliki", "purpose": "Wyłącznie znacznik zaślepki sampleTag." }
+    },
+    "shadows": [
+      { "name": "pressable-edge", "value": "0 4px 0 0 var(--front-brand-edge), 0 14px 26px -14px color-mix(in oklch, var(--front-brand-edge), transparent 20%)", "purpose": "Przycisk główny w spoczynku. Wariant wtórny podstawia --front-line jako krawędź." },
+      { "name": "pressable-edge-active", "value": "0 1px 0 0 var(--front-brand-edge), 0 8px 16px -12px color-mix(in oklch, var(--front-brand-edge), transparent 20%)", "purpose": "Stan :active, razem z translateY(3px)." },
+      { "name": "card-lift", "value": "0 18px 40px -28px color-mix(in oklch, var(--front-ink), transparent 60%)", "purpose": "Wszystkie karty i listy dzielone (cardBase). Nie zmienia się na hover." },
+      { "name": "slot-card-lift", "value": "0 30px 60px -32px color-mix(in oklch, var(--front-ink), transparent 55%)", "purpose": "Tylko karta wyboru terminu — bohater pierwszego widoku." },
+      { "name": "sticker", "value": "0 10px 20px -14px color-mix(in oklch, var(--front-ink), transparent 40%)", "purpose": "Obrócona naklejka nad kartą terminu, razem z ring-1." }
+    ],
+    "motion": [
+      { "name": "front-slot-in", "value": "opacity 0→1, translateY(8px)→0, scale(0.94)→1, blur(3px)→0 w 0.42s cubic-bezier(0.16, 1, 0.3, 1) both", "purpose": "Jedyny autorski moment ruchu na stronie: kafelki godzin po zmianie przedmiotu lub dnia." },
+      { "name": "slot-stagger", "value": "45ms", "purpose": "Opóźnienie kaskady między kolejnymi kafelkami godzin." },
+      { "name": "state-color", "value": "150ms", "purpose": "Przejścia koloru, tła i mechaniki wciskania." },
+      { "name": "state-transform", "value": "200ms", "purpose": "Uniesienie karty na hover i obrót strzałki FAQ." },
+      { "name": "reduced-motion", "value": "animation-duration: 0.01ms; transition-duration: 0.01ms !important", "purpose": "Przy prefers-reduced-motion cały ruch frontu znika." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "container", "value": "1152px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Przycisk główny",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Akcja główna: wciskany przycisk z krawędzią o zerowym rozmyciu.",
+      "html": "<button class=\"ds-btn-primary\">Umów lekcję<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 3.25rem; padding: 0 28px; border: none; border-radius: 16px; background: var(--front-brand-solid, #5b47e0); color: var(--front-on-brand, #fff); font-family: Nunito, sans-serif; font-size: 1rem; font-weight: 700; box-shadow: 0 4px 0 0 var(--front-brand-edge, #4432c2), 0 14px 26px -14px color-mix(in oklch, var(--front-brand-edge, #4432c2), transparent 20%); transition: transform .15s, box-shadow .15s, background-color .15s; cursor: pointer; } .ds-btn-primary svg { width: 20px; height: 20px; flex-shrink: 0; } .ds-btn-primary:hover { background: var(--front-brand-hover, #6a58ea); } .ds-btn-primary:focus-visible { outline: 3px solid var(--front-brand, #5b47e0); outline-offset: 2px; } .ds-btn-primary:active { transform: translateY(3px); box-shadow: 0 1px 0 0 var(--front-brand-edge, #4432c2), 0 8px 16px -12px color-mix(in oklch, var(--front-brand-edge, #4432c2), transparent 20%); }"
+    },
+    {
+      "name": "Przycisk wtórny",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Akcja poboczna: ta sama mechanika wciskania, krawędź w kolorze linii.",
+      "html": "<button class=\"ds-btn-secondary\">Jak to działa</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 3.25rem; padding: 0 28px; border: 2px solid var(--front-line, #e8e6f4); border-radius: 16px; background: var(--front-surface, #fff); color: var(--front-ink, #1a1830); font-family: Nunito, sans-serif; font-size: 1rem; font-weight: 700; box-shadow: 0 4px 0 0 var(--front-line, #e8e6f4); transition: transform .15s, box-shadow .15s, border-color .15s; cursor: pointer; } .ds-btn-secondary:hover { border-color: var(--front-line-strong, #d6d2ee); } .ds-btn-secondary:focus-visible { outline: 3px solid var(--front-brand, #5b47e0); outline-offset: 2px; } .ds-btn-secondary:active { transform: translateY(3px); box-shadow: 0 1px 0 0 var(--front-line, #e8e6f4); }"
+    },
+    {
+      "name": "Przycisk mały",
+      "kind": "button",
+      "refersTo": "button-small",
+      "description": "Kontrolka nagłówka strony. Bez krawędzi wciskanej — nie jest akcją główną.",
+      "html": "<button class=\"ds-btn-small\">Panel</button>",
+      "css": ".ds-btn-small { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 2.5rem; padding: 0 16px; border: none; border-radius: 12px; background: var(--front-ground, #fbfaff); color: var(--front-ink, #1a1830); font-family: Nunito, sans-serif; font-size: .875rem; font-weight: 700; transition: background-color .15s, color .15s; cursor: pointer; } .ds-btn-small:hover { background: var(--front-brand-soft, #eeebff); color: var(--front-brand, #5b47e0); } .ds-btn-small:focus-visible { outline: 3px solid var(--front-brand, #5b47e0); outline-offset: 2px; }"
+    },
+    {
+      "name": "Chip poziomu",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Owalna etykieta informacyjna: poziom nauczania w karcie przedmiotu.",
+      "html": "<span class=\"ds-chip\">Matura</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 9999px; background: var(--front-ground, #fbfaff); color: var(--front-muted, #5a5878); font-family: Nunito, sans-serif; font-size: .875rem; font-weight: 600; }"
+    },
+    {
+      "name": "Chip wybieralny",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "Wybór przedmiotu w karcie terminu. Zaznaczenie jest atramentowe, kolor przedmiotu wraca jako pierścień.",
+      "html": "<button class=\"ds-chip-pick\">Fizyka</button><button class=\"ds-chip-pick ds-chip-pick--on\">Matematyka</button>",
+      "css": ".ds-chip-pick { padding: 8px 16px; border: none; border-radius: 9999px; background: var(--front-sky-soft, #e3f1ff); color: var(--front-sky, #1568b5); font-family: Nunito, sans-serif; font-size: .875rem; font-weight: 700; transition: background-color .15s, color .15s, box-shadow .15s; cursor: pointer; } .ds-chip-pick:hover { filter: brightness(.97); } .ds-chip-pick--on { background: var(--front-ink, #1a1830); color: var(--front-surface, #fff); box-shadow: 0 0 0 2px var(--front-surface, #fff), 0 0 0 4px var(--front-brand, #5b47e0); } .ds-chip-pick:focus-visible { outline: 3px solid var(--front-brand, #5b47e0); outline-offset: 2px; }"
+    },
+    {
+      "name": "Karta",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Podstawowa karta treści: promień 24px, linia 1px, uniesienie atmosferyczne, hover tylko przesunięciem.",
+      "html": "<article class=\"ds-card\"><span class=\"ds-card__tile\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M18 7c0-5.333-8-5.333-8 0\"/><path d=\"M10 7v14\"/><path d=\"M6 21h12\"/><path d=\"M6 13h10\"/></svg></span><h3 class=\"ds-card__title\">Matematyka</h3><p class=\"ds-card__text\">Od ułamków po całki. Bieżący materiał, sprawdziany i matura rozszerzona.</p></article>",
+      "css": ".ds-card { display: flex; flex-direction: column; padding: 24px; border: 1px solid var(--front-line, #e8e6f4); border-radius: 24px; background: var(--front-surface, #fff); box-shadow: 0 18px 40px -28px color-mix(in oklch, var(--front-ink, #1a1830), transparent 60%); transition: transform .2s; } .ds-card:hover { transform: translateY(-4px); } .ds-card__tile { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 16px; background: var(--front-brand-soft, #eeebff); color: var(--front-brand, #5b47e0); } .ds-card__tile svg { width: 24px; height: 24px; } .ds-card__title { margin: 20px 0 0; font-family: Fredoka, sans-serif; font-size: 1.5rem; font-weight: 600; letter-spacing: -.025em; color: var(--front-ink, #1a1830); } .ds-card__text { margin: 8px 0 0; font-family: Nunito, sans-serif; font-size: 1rem; line-height: 1.625; color: var(--front-muted, #5a5878); }"
+    },
+    {
+      "name": "Wiersz listy dzielonej",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Pozycje porównywalne (cennik, nauczyciele, FAQ) leżą w jednym pudełku z przegrodami, nie w osobnych kartach.",
+      "html": "<div class=\"ds-rows\"><div class=\"ds-row\"><div><h3 class=\"ds-row__title\">Liceum</h3><p class=\"ds-row__text\">Bieżący materiał i sprawdziany.</p></div><p class=\"ds-row__price\"><span>100 zł</span><small>/ 60 min</small></p></div><div class=\"ds-row\"><div><h3 class=\"ds-row__title\">Matura</h3><p class=\"ds-row__text\">Arkusze, terminy, powtórki.</p></div><p class=\"ds-row__price\"><span>120 zł</span><small>/ 60 min</small></p></div></div>",
+      "css": ".ds-rows { overflow: hidden; border: 1px solid var(--front-line, #e8e6f4); border-radius: 24px; background: var(--front-surface, #fff); box-shadow: 0 18px 40px -28px color-mix(in oklch, var(--front-ink, #1a1830), transparent 60%); } .ds-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 24px 32px; } .ds-row + .ds-row { border-top: 1px solid var(--front-line, #e8e6f4); } .ds-row__title { margin: 0; font-family: Fredoka, sans-serif; font-size: 1.5rem; font-weight: 600; letter-spacing: -.025em; color: var(--front-ink, #1a1830); } .ds-row__text { margin: 4px 0 0; font-family: Nunito, sans-serif; line-height: 1.625; color: var(--front-muted, #5a5878); } .ds-row__price { margin: 0; white-space: nowrap; } .ds-row__price span { font-family: Fredoka, sans-serif; font-size: 1.875rem; font-weight: 600; color: var(--front-ink, #1a1830); } .ds-row__price small { margin-left: 4px; font-family: Nunito, sans-serif; font-weight: 700; color: var(--front-muted, #5a5878); }"
+    },
+    {
+      "name": "Kafelek godziny",
+      "kind": "custom",
+      "refersTo": "chip-selected",
+      "description": "Element wyboru terminu z jedynym autorskim ruchem w systemie: front-slot-in z kaskadą 45 ms.",
+      "html": "<div class=\"ds-slots\"><button class=\"ds-slot\" style=\"animation-delay:0ms\">16:00</button><button class=\"ds-slot ds-slot--on\" style=\"animation-delay:45ms\">17:30</button><button class=\"ds-slot\" style=\"animation-delay:90ms\">19:00</button></div>",
+      "css": "@keyframes ds-slot-in { from { opacity: 0; transform: translateY(8px) scale(.94); filter: blur(3px); } to { opacity: 1; transform: none; filter: blur(0); } } .ds-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; } .ds-slot { padding: 10px 0; border: none; border-radius: 12px; background: var(--front-ground, #fbfaff); color: var(--front-ink, #1a1830); font-family: Nunito, sans-serif; font-size: .875rem; font-weight: 700; font-variant-numeric: tabular-nums; animation: ds-slot-in .42s cubic-bezier(.16,1,.3,1) both; transition: background-color .15s, color .15s; cursor: pointer; } .ds-slot:hover { background: var(--front-brand-soft, #eeebff); } .ds-slot:focus-visible { outline: 3px solid var(--front-brand, #5b47e0); outline-offset: 2px; } .ds-slot--on { background: var(--front-ink, #1a1830); color: var(--front-surface, #fff); box-shadow: 0 0 0 2px var(--front-surface, #fff), 0 0 0 4px var(--front-brand, #5b47e0); } @media (prefers-reduced-motion: reduce) { .ds-slot { animation-duration: .01ms; transition-duration: .01ms; } }"
+    },
+    {
+      "name": "Nawigacja",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "Przyklejony nagłówek z półprzezroczystą powierzchnią; linki dostają kapsułę 12px na hover.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\" class=\"ds-nav__link\">Przedmioty</a><a href=\"#\" class=\"ds-nav__link\">Cennik</a><a href=\"#\" class=\"ds-nav__link\">Pytania</a></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; gap: 4px; padding: 12px 16px; border-bottom: 1px solid var(--front-line, #e8e6f4); background: color-mix(in oklch, var(--front-surface, #fff), transparent 10%); backdrop-filter: blur(4px); } .ds-nav__link { padding: 8px 12px; border-radius: 12px; font-family: Nunito, sans-serif; font-size: .9375rem; font-weight: 600; color: var(--front-muted, #5a5878); text-decoration: none; transition: background-color .15s, color .15s; } .ds-nav__link:hover { background: var(--front-brand-soft, #eeebff); color: var(--front-brand, #5b47e0); } .ds-nav__link:focus-visible { outline: 3px solid var(--front-brand, #5b47e0); outline-offset: 2px; }"
+    },
+    {
+      "name": "Znacznik zaślepki",
+      "kind": "chip",
+      "refersTo": "sample-tag",
+      "description": "Jawne oznaczenie treści czekającej na prawdziwe dane; zawsze przy sekcji i ze zdaniem, co ją zastąpi.",
+      "html": "<p class=\"ds-sample-line\"><span class=\"ds-sample-tag\">profile przykładowe</span> prawdziwe wejdą z panelu, razem z ich grafikiem</p>",
+      "css": ".ds-sample-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; font-family: Nunito, sans-serif; color: var(--front-muted, #5a5878); } .ds-sample-tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; background: var(--front-brand-soft, #eeebff); color: var(--front-brand, #5b47e0); font-size: .75rem; font-weight: 700; letter-spacing: .025em; text-transform: uppercase; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Jasna klasa z grafikiem na ścianie",
+    "overview": "Świat jest kanonem kategorii edukacyjnej zagranym prosto — poprzeczka to Duolingo, Khan i Brainly, bez ironii i bez prób bycia czymś innym. Grunt jest jasny, prawie biały z fioletowym podbiciem; winogronowy --front-brand jest jedynym głosem marki, a cztery kolory pomocnicze (słońce, koral, mięta, błękit) służą wyłącznie do rozróżniania rzeczy, nie do dekoracji. Powierzchnia jest gęsto zaokrąglona, przyciski dają się wcisnąć, a odręczne akcenty (zakreślacz, strzałka) mówią „ktoś to napisał ręką\", nie „to jest ilustracja\".\n\nGęstość jest niska i celowa: jedna kolumna treści szeroka na 1152 px, sekcje oddzielone 80–96 px oddechu, akapity twardo ograniczone miarą. Strona nie zagaduje — mówi, kto uczy, ile to kosztuje i kiedy jest wolne, a jedynym elementem, który cokolwiek robi, jest karta wyboru terminu w pierwszym widoku.\n\nŚwiat jest w całości dwumotywowy. Każdy token --front-* jest zdefiniowany dwa razy — jasno w :root, ciemno w .dark — więc żaden komponent frontu nigdy nie sięga po token panelu i żaden nie potrzebuje wariantu dark: poza dosłownym przełącznikiem ikony w ThemeToggle.",
+    "keyCharacteristics": [
+      "Winogronowa marka na jasnofioletowym gruncie, cztery kolory pomocnicze wyłącznie jako sygnał kategorii",
+      "Fredoka do nagłówków i liczb, Nunito do zdań — podział ról, nie mieszanka",
+      "Wciskany przycisk z cieniem o zerowym rozmyciu; reszta powierzchni płaska albo miękko uniesiona",
+      "Drabina promieni 12 / 16 / 24 / 28 / 32 px, nic kanciastego",
+      "Jeden autorski moment ruchu (front-slot-in), poza nim tylko przejścia stanów",
+      "Wszystko dwumotywowe u źródła: token świeci w :root i w .dark, nigdy tylko w jednym"
+    ],
+    "rules": [
+      { "name": "The Two-Definition Rule", "body": "Każdy token --front-* jest zapisany dwa razy: wartość jasna w :root, ciemna w .dark. Nowy token, który istnieje tylko w jednym motywie, jest błędem — nie wolno go łatać wariantem dark: w komponencie.", "section": "colors" },
+      { "name": "The Sealed-Surface Rule", "body": "Front nie czyta tokenów panelu (--background, --primary, --foreground) i nie eksportuje swoich. Cała powierzchnia publiczna żyje pod [data-surface=\"front\"]; to selektor, na którym wiszą tło, karetka, zaznaczenie, pasek przewijania i obramowanie focus.", "section": "colors" },
+      { "name": "The Meaning-Not-Mood Rule", "body": "Kolor pomocniczy zawsze coś znaczy — przedmiot, poziom, status. Matematyka jest winogronowa, fizyka błękitna, informatyka miętowa, i tak samo w kartach przedmiotów, w wyborze terminu i w sygnaturach. Nie wolno użyć koralu ani słońca „dla urozmaicenia\".", "section": "colors" },
+      { "name": "The Warm-Band-Collapses Rule", "body": "--front-band-warm to jedyny token, który w trybie ciemnym celowo zrównuje się z gruntem (#131120). Ciepłe pasmo opinii istnieje tylko w jasnym motywie; w ciemnym karty niosą je same.", "section": "colors" },
+      { "name": "The Role-Split Rule", "body": "Fredoka mówi „co to jest i ile kosztuje\" (nagłówki, nazwy, liczby). Nunito mówi zdaniami (akapity, etykiety, przyciski). Akapit złożony Fredoką i cena złożona Nunito to obie ta sama pomyłka.", "section": "typography" },
+      { "name": "The Polish Widow Rule", "body": "Po każdym jednoliterowym słowie (i, w, z, o, a, u) idzie twarda spacja — w nagłówkach i w treści. Tam, gdzie łamanie ma paść w konkretnym miejscu, fraza dostaje whitespace-nowrap na własnym span, a nagłówek text-balance. Nagłówek złamany tak, że wers kończy się na „i\", jest defektem.", "section": "typography" },
+      { "name": "The Weight-Ceiling Rule", "body": "Fredoka jest ładowana tylko do 600 i tylko font-semibold jest w użyciu. Nie ma nagłówka cięższego niż 600; siłę daje rozmiar i tracking, nie waga.", "section": "typography" },
+      { "name": "The Measure Rule", "body": "Każdy akapit ma zadeklarowaną miarę w ch (46–68). Tekst rozciągnięty na pełne 1152 px nie wchodzi na stronę.", "section": "layout" },
+      { "name": "The Pressable-Edge Rule", "body": "Cień o zerowym rozmyciu nosi wyłącznie kontrolka, którą naprawdę da się wcisnąć — przycisk lub link-akcja z :active. Karta, pasmo, chip informacyjny i naklejka nigdy go nie dostają. Test: jeśli element nie ma stanu :active, nie ma prawa do dolnej krawędzi.", "section": "elevation" },
+      { "name": "The Card-Lift-Is-Ambient Rule", "body": "Karta unosi się cieniem rozmytym i reaguje na hover wyłącznie przesunięciem (hover:-translate-y-1, 200 ms) — cień się nie zmienia. Głębia jest tłem, nie sprzężeniem zwrotnym.", "section": "elevation" },
+      { "name": "The Static-Doodle Rule", "body": "Odręczne akcenty są statyczne z definicji. Animacja „rysowania się\" została usunięta, bo nie startowała w karcie, która nie renderuje klatek — akcent znikał w zrzutach i na dławionych kartach. Element dekoracyjny, który zależy od klatek, żeby w ogóle być widocznym, nie wchodzi.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do definiować każdy nowy token frontu dwa razy — jasno w :root, ciemno w .dark — zanim użyjesz go w komponencie.",
+      "Do trzymać się drabiny promieni 12 / 16 / 24 / 28 / 32 px i pełnego owalu dla chipów.",
+      "Do dawać cień o zerowym rozmyciu wyłącznie kontrolkom ze stanem :active.",
+      "Do składać nagłówki i wszystkie kwoty krojem Fredoka 600, a zdania krojem Nunito.",
+      "Do wstawiać twardą spację po jednoliterowym słowie i dokładać whitespace-nowrap tam, gdzie łamanie musi paść w konkretnym miejscu.",
+      "Do deklarować miarę akapitu w ch (46–68) przy każdym bloku tekstu.",
+      "Do prowadzić rytm pasm przez naprzemienne tła (grunt / powierzchnia / kolor), a nie przez linie rozdzielające.",
+      "Do oznaczać każdą treść-zaślepkę klasą sampleTag i zdaniem mówiącym, co ją zastąpi.",
+      "Do używać wyłącznie ikon lucide w jednej wadze i jednym rozmiarze na kontekst (20px w przyciskach, 16px w małych, 24px w kafelkach przedmiotów)."
+    ],
+    "donts": [
+      "Don't sięgać po tokeny panelu (--background, --primary, --foreground, --sidebar-*) ani po components/ui/button na stronie publicznej — panel jest skalowany pod inną gęstość.",
+      "Don't dokładać wariantów dark: do kolorów; motyw ma iść przez parę tokenów, nie przez klasę. Wyjątkiem jest podmiana ikony w ThemeToggle.",
+      "Don't dawać karcie, paśmie ani plakietce dolnej krawędzi wciskanej — to obietnica kliknięcia, której nie spełniają.",
+      "Don't dodawać animacji wejścia poza front-slot-in; strona ma jeden moment ruchu i on należy do wyboru godziny.",
+      "Don't uzależniać widoczności elementu od animacji — akcenty odręczne są statyczne z definicji.",
+      "Don't używać koloru pomocniczego dekoracyjnie; słońce, koral, mięta i błękit zawsze niosą kategorię, poziom albo status.",
+      "Don't obciążać nagłówka wagą powyżej 600 ani ładować Fredoki w cięższych odmianach.",
+      "Don't ukrywać braku dostępności — dzień bez godzin zostaje na siatce jako kafelek przekreślony.",
+      "Don't rozciągać akapitu na pełną szerokość kolumny max-w-6xl."
+    ]
+  }
+}

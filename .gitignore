@@ -39,5 +39,8 @@ next-env.d.ts
 # prisma
 /lib/generated/
 
-# impeccable — zrzuty i artefakty recenzji
-/.impeccable/
+# impeccable — zrzuty z recenzji, ale zapis systemu (design.json) zostaje
+/.impeccable/review/
+/.impeccable/mocks/
+/.impeccable/questions/
+/.impeccable/hook.cache.json

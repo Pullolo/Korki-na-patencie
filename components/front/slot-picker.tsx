@@ -122,8 +122,8 @@ chcę zająć termin: ${slot}, ${subject.minutes} min — ${price} zł.
 
   return (
     <div className="relative">
-      {/* Naklejka — jedyny obrócony element na stronie, więc czyta się jak
-          naklejka, a nie jak przypadek. */}
+      {/* Naklejka. Obrót jest tu językiem, nie przypadkiem — dzielą go
+          zakreślacz w nagłówkach i karteczki z opiniami. */}
       <span className="absolute -top-4 -right-1 z-10 rotate-[7deg] rounded-2xl bg-front-sun-soft px-3.5 py-2 font-display text-sm leading-tight font-semibold text-front-sun shadow-[0_10px_20px_-14px_color-mix(in_oklch,var(--front-ink),transparent_40%)] ring-1 ring-front-sun/40 sm:text-base">
         pierwsza lekcja
         <br className="sm:hidden" /> bez zobowiązań
