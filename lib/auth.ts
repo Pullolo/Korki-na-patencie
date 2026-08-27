@@ -137,3 +137,64 @@ export function teacherScope(ctx: DashboardContext) {
   if (ctx.isAdmin) return {}
   return { teacherProfileId: ctx.teacherProfileId ?? "__brak__" }
 }
+
+/**
+ * Konto ucznia jest osobną bramką niż panel: wpuszcza **każdego**
+ * zalogowanego, także nauczyciela i admina, bo każdy z nich może mieć
+ * u nas własne lekcje. Rola nie ma tu nic do rzeczy — liczy się tożsamość.
+ */
+export type AccountContext = {
+  clerkId: string
+  userId: string
+  email: string
+  firstName: string | null
+  lastName: string | null
+  fullName: string
+  phone: string | null
+  imageUrl: string | null
+}
+
+async function loadAccount(): Promise<AccountContext | null> {
+  const clerkUser = await currentUser()
+  if (!clerkUser) return null
+
+  const dbUser = await prisma.user.findUnique({
+    where: { clerkId: clerkUser.id },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      imageUrl: true,
+    },
+  })
+  if (!dbUser) return null
+
+  const email = dbUser.email ?? ""
+  return {
+    clerkId: clerkUser.id,
+    userId: dbUser.id,
+    email,
+    firstName: dbUser.firstName,
+    lastName: dbUser.lastName,
+    fullName:
+      [dbUser.firstName, dbUser.lastName].filter(Boolean).join(" ") || email,
+    phone: dbUser.phone,
+    imageUrl: dbUser.imageUrl,
+  }
+}
+
+/** Dla stron `/konto/**` — przekierowuje na logowanie zamiast rzucać. */
+export async function ensureAccountPage(): Promise<AccountContext> {
+  const ctx = await loadAccount()
+  if (!ctx) redirect("/sign-in")
+  return ctx
+}
+
+/** Dla akcji ucznia — rzuca, bo w akcji nie ma sensownego przekierowania. */
+export async function requireAccountUser(): Promise<AccountContext> {
+  const ctx = await loadAccount()
+  if (!ctx) throw new Error("Zaloguj się, żeby wykonać tę operację.")
+  return ctx
+}
