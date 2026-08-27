@@ -5,6 +5,8 @@ import { Geist_Mono, Inter } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { getSiteSettings } from "@/lib/public/settings"
+import { SITE_URL } from "@/lib/seo"
 import { ensureUserSynced } from "@/lib/sync-user"
 import { cn } from "@/lib/utils"
 
@@ -15,13 +17,27 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 })
 
-export const metadata: Metadata = {
-  title: {
-    default: "Korki na patencie",
-    template: "%s — Korki na patencie",
-  },
-  description:
-    "Korepetycje z matematyki, fizyki i informatyki — sprawdź wolne terminy i zapisz się online.",
+const DEFAULT_DESCRIPTION =
+  "Korepetycje z matematyki, fizyki i informatyki — sprawdź wolne terminy i zapisz się online."
+
+/**
+ * Domyślne meta dla całego serwisu. Podstrony nadpisują je własnym
+ * `generateMetadata`, a kolejność źródeł jest zawsze ta sama: encja →
+ * `SiteSettings` → wartość domyślna (`docs/FRONTEND.md`, sekcja 9).
+ *
+ * `metadataBase` jest tu obowiązkowe: bez niego canonical i obrazy OG
+ * wychodzą ze ścieżkami względnymi i nie działają w żadnym podglądzie linku.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings()
+  const name = settings.seoTitle || settings.siteName
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: { default: name, template: `%s — ${settings.siteName}` },
+    description: settings.seoDescription || settings.tagline || DEFAULT_DESCRIPTION,
+    ...(settings.noIndexSite ? { robots: { index: false, follow: false } } : {}),
+  }
 }
 
 // Kontrakt kierunku wizualnego strony publicznej. Zostaje w wyrenderowanym
