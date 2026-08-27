@@ -5,12 +5,16 @@ import { revalidatePath } from "next/cache"
 import { requireAdmin, requireTeacherAccess } from "@/lib/auth"
 import type { LocationType } from "@/lib/generated/prisma/enums"
 import { prisma } from "@/lib/prisma"
+import { revalidateTags, TAGS } from "@/lib/tags"
 import { uniqueSlug } from "@/lib/slug"
 
+// Front czyta katalog z cache'a pod tagami — sama ścieżka w panelu
+// nie wystarczy, żeby zmiana pokazała się na stronie publicznej.
 function refreshCatalog() {
   revalidatePath("/dashboard/przedmioty")
   revalidatePath("/dashboard/poziomy")
   revalidatePath("/dashboard/nauczyciele")
+  revalidateTags(TAGS.katalog, TAGS.nauczyciele)
 }
 
 function requireName(name: string) {
@@ -171,6 +175,7 @@ function refreshLocations() {
   revalidatePath("/dashboard/lokalizacje")
   revalidatePath("/dashboard/dostepnosc")
   revalidatePath("/dashboard/nauczyciele")
+  revalidateTags(TAGS.nauczyciele, TAGS.grupy)
 }
 
 export async function createLocation(

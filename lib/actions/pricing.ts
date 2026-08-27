@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 
 import { requireAdmin } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { revalidateTags, TAGS } from "@/lib/tags"
 
 export type PriceRuleInput = {
   levelId: string | null
@@ -17,6 +18,7 @@ export type PriceRuleInput = {
 function refresh() {
   revalidatePath("/dashboard/cennik")
   revalidatePath("/dashboard/nauczyciele")
+  revalidateTags(TAGS.cennik)
 }
 
 function assertPrice(value: number) {

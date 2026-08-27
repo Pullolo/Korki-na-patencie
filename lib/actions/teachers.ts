@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache"
 
 import { requireAdmin, requireTeacherAccess } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { revalidateTags, TAGS } from "@/lib/tags"
 import { uniqueSlug } from "@/lib/slug"
 
 function refresh(teacherProfileId: string) {
   revalidatePath("/dashboard/nauczyciele")
   revalidatePath(`/dashboard/nauczyciele/${teacherProfileId}`)
+  revalidateTags(TAGS.nauczyciele)
 }
 
 export type TeacherProfileInput = {

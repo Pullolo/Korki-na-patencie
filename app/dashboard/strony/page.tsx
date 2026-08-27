@@ -1,23 +1,31 @@
 import type { Metadata } from "next"
 
-import { ComingSoon } from "@/components/dashboard/coming-soon"
+import { PagesTable } from "@/components/dashboard/content/pages-table"
+import { Header } from "@/components/dashboard/header"
+import { Panel } from "@/components/dashboard/panel"
 import { ensureAdminPage } from "@/lib/auth"
+import { plural } from "@/lib/format"
+import { getPages } from "@/lib/queries/content"
 
 export const metadata: Metadata = { title: "Strony" }
 
-export default async function Page() {
+export default async function PagesPage() {
   await ensureAdminPage()
+  const pages = await getPages().catch(() => [])
+  const published = pages.filter((page) => page.status === "PUBLISHED").length
 
   return (
-    <ComingSoon
-      stage="etap 3.5, po zbudowaniu frontendu"
-      title="Strony"
-      subtitle="Treści CMS"
-      planned={[
-        "Lista stron ze statusem szkic / opublikowana",
-        "Edytor markdown z podglądem i polami SEO",
-        "Strony typu: o mnie, cennik, regulamin, polityka prywatności",
-      ]}
-    />
+    <div className="flex w-full min-w-0 flex-col">
+      <Header
+        title="Strony"
+        subtitle={`${pages.length} ${plural(pages.length, "strona", "strony", "stron")} · ${published} opublikowanych · widoczne w stopce serwisu`}
+      />
+
+      <div className="p-4 sm:p-6">
+        <Panel bodyClassName="p-0 sm:p-0">
+          <PagesTable pages={pages} />
+        </Panel>
+      </div>
+    </div>
   )
 }

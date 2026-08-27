@@ -8,10 +8,12 @@ import type { EnrollmentInput } from "@/lib/enrollment"
 import { enrollStudent } from "@/lib/enrollment"
 import type { EnrollmentStatus } from "@/lib/generated/prisma/enums"
 import { prisma } from "@/lib/prisma"
+import { revalidateTags, TAGS } from "@/lib/tags"
 import { uniqueSlug } from "@/lib/slug"
 
 function refresh() {
   revalidatePath("/dashboard/grupy")
+  revalidateTags(TAGS.grupy)
   revalidatePath("/dashboard/cennik")
   revalidatePath("/dashboard/dostepnosc")
   revalidatePath("/dashboard/kalendarz")

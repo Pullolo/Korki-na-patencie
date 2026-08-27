@@ -8,6 +8,7 @@ import { plural } from "@/lib/format"
 import { UserRole } from "@/lib/generated/prisma/enums"
 import { notify } from "@/lib/notifications"
 import { prisma } from "@/lib/prisma"
+import { revalidateTags, TAGS } from "@/lib/tags"
 
 function slugify(value: string) {
   return value
@@ -118,6 +119,7 @@ export async function updateUserRole(userId: string, role: UserRole) {
 
   revalidatePath("/dashboard/uzytkownicy")
   revalidatePath("/dashboard/nauczyciele")
+  revalidateTags(TAGS.nauczyciele)
   return { ok: true }
 }
 
@@ -203,5 +205,6 @@ export async function setTeacherProfile(userId: string, enabled: boolean) {
 
   revalidatePath("/dashboard/uzytkownicy")
   revalidatePath("/dashboard/nauczyciele")
+  revalidateTags(TAGS.nauczyciele)
   return { ok: true }
 }

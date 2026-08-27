@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 
 import { requireAdmin } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { revalidateTags, TAGS } from "@/lib/tags"
 
 export type SiteSettingsInput = {
   siteName: string
@@ -62,4 +63,5 @@ export async function updateSiteSettings(input: SiteSettingsInput) {
 
   // Nazwa serwisu siedzi w sidebarze, więc odświeżamy cały panel.
   revalidatePath("/dashboard", "layout")
+  revalidateTags(TAGS.ustawienia)
 }
