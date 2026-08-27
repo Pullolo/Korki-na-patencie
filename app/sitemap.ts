@@ -10,10 +10,17 @@ import { absoluteUrl } from "@/lib/seo"
 /**
  * Mapa witryny: trasy stałe plus wszystko, co ma slug w bazie.
  *
+ * Liczona przy żądaniu, nie przy budowaniu. Prerender pytałby bazę w czasie
+ * `next build` — a wtedy mapa zbudowana bez połączenia (albo z połączeniem,
+ * które nie doszło przy kilkunastu równoległych workerach) wychodzi cicho
+ * bez slugów i nikt się o tym nie dowiaduje. Tu cisza kosztuje indeksację.
+ *
  * Strony pod kodem (`/rezerwacja/[kod]`, `/zapis/[kod]`), konto i panel
  * nie mają tu czego szukać — to nie są adresy do indeksowania.
  * `Page.noIndex` wypada, a `SiteSettings.noIndexSite` opróżnia mapę zupełnie.
  */
+
+export const dynamic = "force-dynamic"
 
 const STATIC_ROUTES: { path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"] }[] = [
   { path: "/", priority: 1, changeFrequency: "daily" },
