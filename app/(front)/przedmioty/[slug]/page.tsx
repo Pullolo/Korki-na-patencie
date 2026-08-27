@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 
 import { SlotPicker } from "@/components/front/booking/slot-picker"
 import { TeacherCard } from "@/components/front/catalog/teacher-card"
+import { JsonLd } from "@/components/front/json-ld"
 import { PageHero } from "@/components/front/layout/page-hero"
 import { FaqList } from "@/components/front/sections/faq"
 import { btnSecondary, cardBase, chip } from "@/components/front/styles"
@@ -20,7 +21,7 @@ import { listReviews } from "@/lib/public/reviews"
 import { getSiteSettings } from "@/lib/public/settings"
 import { getSubject, listSubjects } from "@/lib/public/subjects"
 import { listTeachers } from "@/lib/public/teachers"
-import { pageMetadata, seoDescription } from "@/lib/seo"
+import { absoluteUrl, pageMetadata, seoDescription } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
 const HORIZON_DAYS = 14
@@ -92,8 +93,31 @@ export default async function SubjectPage({
     (item) => item.category?.toLowerCase() === subject.name.toLowerCase()
   )
 
+  const course = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: `Korepetycje — ${subject.name}`,
+    url: absoluteUrl(`/przedmioty/${subject.slug}`),
+    ...(subject.description ? { description: subject.description } : {}),
+    provider: {
+      "@type": "EducationalOrganization",
+      name: settings.siteName,
+    },
+    ...(priceRows.length > 0
+      ? {
+          offers: priceRows.map((row) => ({
+            "@type": "Offer",
+            name: row.level.name,
+            price: row.pricePerHour,
+            priceCurrency: settings.currency,
+          })),
+        }
+      : {}),
+  }
+
   return (
     <>
+      <JsonLd data={course} />
       <PageHero
         crumbs={[
           { label: "Przedmioty", href: "/przedmioty" },

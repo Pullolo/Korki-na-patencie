@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { Avatar } from "@/components/front/avatar"
+import { JsonLd } from "@/components/front/json-ld"
 import { SlotPicker } from "@/components/front/booking/slot-picker"
 import { PageHero } from "@/components/front/layout/page-hero"
 import { cardBase, chip } from "@/components/front/styles"
@@ -15,7 +16,7 @@ import { getPriceRules } from "@/lib/public/pricing"
 import { averageRating, listReviews } from "@/lib/public/reviews"
 import { getSiteSettings } from "@/lib/public/settings"
 import { getTeacher } from "@/lib/public/teachers"
-import { pageMetadata, seoDescription } from "@/lib/seo"
+import { absoluteUrl, pageMetadata, seoDescription } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
 /** Grafik na profilu pokazujemy na dwa tygodnie do przodu. */
@@ -82,8 +83,21 @@ export default async function TeacherPage({
     slug: subject.slug,
   }))
 
+  const person = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: teacher.name,
+    url: absoluteUrl(`/nauczyciele/${teacher.slug}`),
+    ...(teacher.headline ? { jobTitle: teacher.headline } : {}),
+    ...(teacher.bio ? { description: teacher.bio } : {}),
+    ...(teacher.imageUrl ? { image: teacher.imageUrl } : {}),
+    knowsAbout: teacher.subjects.map((subject) => subject.name),
+    worksFor: { "@type": "EducationalOrganization", name: settings.siteName },
+  }
+
   return (
     <>
+      <JsonLd data={person} />
       <PageHero
         crumbs={[
           { label: "Nauczyciele", href: "/nauczyciele" },

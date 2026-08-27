@@ -2,6 +2,7 @@ import { ArrowRight, MessageCircle } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { JsonLd } from "@/components/front/json-ld"
 import { PageHero } from "@/components/front/layout/page-hero"
 import { FaqList } from "@/components/front/sections/faq"
 import { btnPrimary, btnSecondary, cardBase } from "@/components/front/styles"
@@ -22,8 +23,24 @@ export default async function FaqPage() {
   const items = await listFaq()
   const groups = groupFaq(items)
 
+  // Pytania i odpowiedzi to jedyne dane strukturalne, które opisują treść
+  // widoczną na stronie jeden do jednego — dlatego wolno je zgłosić.
+  const faqPage =
+    items.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: items.map((item) => ({
+            "@type": "Question",
+            name: item.question,
+            acceptedAnswer: { "@type": "Answer", text: item.answer },
+          })),
+        }
+      : null
+
   return (
     <>
+      {faqPage && <JsonLd data={faqPage} />}
       <PageHero
         crumbs={[{ label: "Pytania" }]}
         title="Pytania, które padają najczęściej"

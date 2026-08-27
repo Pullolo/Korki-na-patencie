@@ -4,6 +4,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { EnrollForm } from "@/components/front/forms/enroll-form"
+import { JsonLd } from "@/components/front/json-ld"
 import { PageHero } from "@/components/front/layout/page-hero"
 import { cardBase, chip } from "@/components/front/styles"
 import { formStamp } from "@/lib/actions/public/guard"
@@ -13,7 +14,7 @@ import { LOCATION_TYPE_LABELS } from "@/lib/labels"
 import { prisma } from "@/lib/prisma"
 import { getGroup } from "@/lib/public/groups"
 import { getSiteSettings } from "@/lib/public/settings"
-import { pageMetadata, seoDescription } from "@/lib/seo"
+import { absoluteUrl, pageMetadata, seoDescription } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
 export async function generateMetadata({
@@ -95,8 +96,42 @@ export default async function GroupPage({
       : []),
   ]
 
+  const course = {
+    "@context": "https://schema.org",
+    "@type": "Course",
+    name: group.name,
+    url: absoluteUrl(`/grupy/${group.slug}`),
+    ...(group.description ? { description: group.description } : {}),
+    provider: {
+      "@type": "EducationalOrganization",
+      name: settings.siteName,
+    },
+    hasCourseInstance: {
+      "@type": "CourseInstance",
+      courseMode:
+        group.location?.type === "ONLINE" ? "Online" : "Onsite",
+      courseSchedule: {
+        "@type": "Schedule",
+        repeatFrequency: "P1W",
+        byDay: weekday?.label,
+        startTime: group.startTime,
+        duration: `PT${group.meetingMinutes}M`,
+      },
+      offers: {
+        "@type": "Offer",
+        price: group.pricePerMonth,
+        priceCurrency: settings.currency,
+        availability:
+          group.seatsLeft > 0
+            ? "https://schema.org/InStock"
+            : "https://schema.org/PreOrder",
+      },
+    },
+  }
+
   return (
     <>
+      <JsonLd data={course} />
       <PageHero
         crumbs={[{ label: "Grupy", href: "/grupy" }, { label: group.name }]}
         title={group.name}

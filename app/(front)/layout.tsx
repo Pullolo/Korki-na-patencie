@@ -1,7 +1,11 @@
 import { Fredoka, Nunito } from "next/font/google"
 
+import { JsonLd } from "@/components/front/json-ld"
 import { SiteFooter } from "@/components/front/layout/site-footer"
 import { SiteHeader } from "@/components/front/layout/site-header"
+import { TrafficBeacon } from "@/components/front/traffic-beacon"
+import { getSiteSettings } from "@/lib/public/settings"
+import { absoluteUrl } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
 /**
@@ -26,11 +30,34 @@ const nunito = Nunito({
   variable: "--font-nunito",
 })
 
-export default function FrontLayout({
+export default async function FrontLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const settings = await getSiteSettings()
+
+  // Wizytówka firmy dla wyszukiwarek. Bez oceny — patrz komentarz w `JsonLd`.
+  const business = {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    name: settings.siteName,
+    url: absoluteUrl("/"),
+    ...(settings.tagline ? { description: settings.tagline } : {}),
+    ...(settings.contactPhone ? { telephone: settings.contactPhone } : {}),
+    ...(settings.contactEmail ? { email: settings.contactEmail } : {}),
+    ...(settings.contactAddress
+      ? {
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: settings.contactAddress,
+          },
+        }
+      : {}),
+    ...(settings.logoUrl ? { logo: settings.logoUrl } : {}),
+    sameAs: [settings.socialFacebook, settings.socialInstagram].filter(Boolean),
+  }
+
   return (
     <div
       data-surface="front"
@@ -40,9 +67,11 @@ export default function FrontLayout({
         "flex min-h-svh flex-col bg-front-ground font-body text-front-ink"
       )}
     >
+      <JsonLd data={business} />
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <SiteFooter />
+      <TrafficBeacon />
     </div>
   )
 }

@@ -1,6 +1,8 @@
 import { ChevronRight } from "lucide-react"
 import Link from "next/link"
 
+import { JsonLd } from "@/components/front/json-ld"
+import { absoluteUrl } from "@/lib/seo"
 import { cn } from "@/lib/utils"
 
 export type Crumb = { label: string; href?: string }
@@ -23,8 +25,31 @@ export function PageHero({
   children?: React.ReactNode
   className?: string
 }) {
+  // Ścieżka okruszków jest już opisana w JSX-ie — powtarzamy ją dla
+  // wyszukiwarek, zamiast budować drugą listę w każdej podstronie osobno.
+  const breadcrumbs =
+    crumbs.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { name: "Start", href: "/" },
+            ...crumbs.map((crumb) => ({
+              name: crumb.label,
+              href: crumb.href ?? null,
+            })),
+          ].map((item, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: item.name,
+            ...(item.href ? { item: absoluteUrl(item.href) } : {}),
+          })),
+        }
+      : null
+
   return (
     <section className={cn("relative overflow-hidden bg-front-ground", className)}>
+      {breadcrumbs && <JsonLd data={breadcrumbs} />}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 [background-image:radial-gradient(var(--front-dots)_1.1px,transparent_1.1px)] [background-size:22px_22px] opacity-60"
