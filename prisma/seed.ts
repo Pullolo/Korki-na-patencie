@@ -2,6 +2,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { config as loadEnv } from "dotenv"
 
 import { toDateOnly } from "../lib/dates"
+import { seedContent } from "./seed-content"
 import { applyDiscount, resolveHourlyPrice } from "../lib/pricing"
 import { PrismaClient } from "../lib/generated/prisma/client"
 
@@ -642,6 +643,11 @@ async function main() {
       ],
     })
   }
+
+  // ─── Treści CMS ────────────────────────────────────────────────────────────
+  // FAQ, menu i strony trafiają do bazy, bo od etapu 3 to panel jest ich
+  // źródłem — front nie trzyma treści w kodzie.
+  await seedContent(prisma, settings.siteName)
 
   console.log("Seed: gotowe")
 }

@@ -30,16 +30,19 @@ export function pageMetadata({
   path,
   image,
   noIndex,
+  absoluteTitle,
 }: {
   title: string
   description: string
   path: string
   image?: string | null
   noIndex?: boolean
+  /** Pomija szablon „%s — nazwa serwisu" z root layoutu (strona główna). */
+  absoluteTitle?: boolean
 }): Metadata {
   const url = absoluteUrl(path)
   return {
-    title,
+    title: absoluteTitle ? { absolute: title } : title,
     description,
     alternates: { canonical: url },
     ...(noIndex ? { robots: { index: false, follow: false } } : {}),

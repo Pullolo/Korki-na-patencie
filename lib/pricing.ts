@@ -103,3 +103,11 @@ export function groupHourlyEquivalent(group: {
   if (hours <= 0) return null
   return Math.round(group.pricePerMonth / hours)
 }
+
+/**
+ * Cena całej lekcji: stawka godzinowa przeskalowana długością spotkania.
+ * `Booking.price` trzyma właśnie tę kwotę — statystyki sumują ją jako przychód.
+ */
+export function lessonPrice(hourlyPrice: number, minutes: number) {
+  return Math.round((hourlyPrice * minutes) / 60)
+}

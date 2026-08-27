@@ -1,215 +1,148 @@
-import {
-  ArrowRight,
-  Atom,
-  Braces,
-  ChevronDown,
-  CircleCheck,
-  Clock3,
-  Mail,
-  MapPin,
-  Phone,
-  Sigma,
-  Star,
-  Users,
-  Video,
-  Wallet,
-} from "lucide-react"
+import { ArrowRight, Clock3, Video, Wallet } from "lucide-react"
+import type { Metadata } from "next"
+import Link from "next/link"
 
+import { SlotPicker } from "@/components/front/booking/slot-picker"
 import { ArrowDoodle, Squiggle } from "@/components/front/doodles"
-import { Marker } from "@/components/front/marker"
-import { SlotPicker } from "@/components/front/slot-picker"
-import {
-  btnPrimary,
-  btnSecondary,
-  cardBase,
-  chip,
-  sampleTag,
-} from "@/components/front/styles"
-import { cn } from "@/lib/utils"
+import { CtaSection } from "@/components/front/sections/cta"
+import { FaqSection } from "@/components/front/sections/faq"
+import { PricingSection } from "@/components/front/sections/pricing"
+import { ReviewsSection } from "@/components/front/sections/reviews"
+import { StepsSection } from "@/components/front/sections/steps"
+import type { SubjectCardData } from "@/components/front/sections/subjects"
+import { SubjectsSection } from "@/components/front/sections/subjects"
+import { TeachersSection } from "@/components/front/sections/teachers"
+import { btnPrimary, btnSecondary } from "@/components/front/styles"
+import { plural } from "@/lib/format"
+import { resolveHourlyPrice } from "@/lib/pricing"
+import { getSlotBoard } from "@/lib/public/availability"
+import { listFaq } from "@/lib/public/faq"
+import { listGroups } from "@/lib/public/groups"
+import { listLevels } from "@/lib/public/levels"
+import { getPriceRules, getPriceTable } from "@/lib/public/pricing"
+import { listReviews } from "@/lib/public/reviews"
+import { getSiteSettings } from "@/lib/public/settings"
+import { listSubjects } from "@/lib/public/subjects"
+import { listTeachers } from "@/lib/public/teachers"
+import { pageMetadata, seoDescription } from "@/lib/seo"
 
-// Landing. Nagłówek, stopka i fonty mieszkają w `app/(front)/layout.tsx`.
-// Kierunek wizualny: kontrakt w `app/layout.tsx`, zapis w `DESIGN.md`.
-//
-// Treść jest jeszcze wpisana na twardo — dane z bazy wchodzą w kroku M1
-// (`docs/FRONTEND.md`, sekcja 12). Zaślepki są oznaczone `sampleTag`.
+/**
+ * Landing. Nagłówek, stopka i fonty mieszkają w `app/(front)/layout.tsx`,
+ * a każda sekcja jest komponentem przyjmującym dane w propsach
+ * (`components/front/sections/*`).
+ *
+ * Cała treść pochodzi z bazy: przedmioty, poziomy, cennik, nauczyciele,
+ * opinie i pytania. Grafik w pierwszym widoku liczymy przy tym żądaniu —
+ * to jedyna obietnica, której nie wolno oprzeć na cache'u.
+ */
 
-const HERO_FACTS = [
-  { icon: Wallet, label: "Płacisz po lekcji" },
-  { icon: Clock3, label: "Odwołanie do 12 h przed" },
-  { icon: Video, label: "Online albo na miejscu" },
-]
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings()
+  return pageMetadata({
+    title: settings.seoTitle || `${settings.siteName} — korepetycje z wolnym terminem`,
+    description: seoDescription(
+      settings.seoDescription || settings.tagline,
+      "Zobacz wolne godziny korepetycji i zapisz się online — bez zakładania konta."
+    ),
+    path: "/",
+    image: settings.seoOgImage,
+    absoluteTitle: true,
+  })
+}
 
-const SUBJECTS = [
-  {
-    icon: Sigma,
-    name: "Matematyka",
-    tone: "bg-front-brand-soft text-front-brand",
-    description:
-      "Od ułamków po całki. Bieżący materiał, sprawdziany i przygotowanie do matury rozszerzonej.",
-    levels: ["Podstawówka", "Liceum", "Matura", "Studia"],
-    from: 80,
-  },
-  {
-    icon: Atom,
-    name: "Fizyka",
-    tone: "bg-front-sky-soft text-front-sky",
-    description:
-      "Mechanika, elektryczność, termodynamika. Zadania rozkładane na części, dopóki nie zaczną być oczywiste.",
-    levels: ["Podstawówka", "Liceum", "Matura"],
-    from: 80,
-  },
-  {
-    icon: Braces,
-    name: "Informatyka",
-    tone: "bg-front-mint-soft text-front-mint",
-    description:
-      "Algorytmy, struktury danych, Python i C++. Matura, olimpiady i pierwsze lata studiów.",
-    levels: ["Liceum", "Matura", "Studia"],
-    from: 100,
-  },
-]
+export default async function HomePage() {
+  const [settings, subjects, levels, teachers, groups, reviews, faq, priceRules] =
+    await Promise.all([
+      getSiteSettings(),
+      listSubjects(),
+      listLevels(),
+      listTeachers(),
+      listGroups(),
+      listReviews({ limit: 3 }),
+      listFaq(),
+      getPriceRules(),
+    ])
 
-const STEPS = [
-  {
-    title: "Wybierasz termin",
-    description:
-      "Przedmiot, poziom i forma zajęć. Pokazujemy godziny, które są naprawdę wolne u konkretnego nauczyciela.",
-  },
-  {
-    title: "Potwierdzamy rezerwację",
-    description:
-      "Dostajesz datę, miejsce i cenę. Nic nie płacisz z góry — rozliczamy się po zajęciach.",
-  },
-  {
-    title: "Uczycie się",
-    description:
-      "Pierwsza lekcja to diagnoza: co siedzi, co nie siedzi i czego brakuje. Potem plan na kolejne tygodnie.",
-  },
-]
+  const [board, priceTable] = await Promise.all([
+    getSlotBoard({ days: 5 }),
+    getPriceTable(levels),
+  ])
 
-// ZAŚLEPKI: nazwiska, opisy i liczby wolnych godzin są przykładowe.
-const TEACHERS = [
-  {
-    initials: "AK",
-    name: "Anna Kowalska",
-    tone: "bg-front-brand-soft text-front-brand",
-    subjects: ["Matematyka", "Fizyka"],
-    bio: "Uczy do matury rozszerzonej od ośmiu lat. Prowadzi też grupę maturalną w czwartki.",
-    free: 6,
-  },
-  {
-    initials: "PN",
-    name: "Piotr Nowak",
-    tone: "bg-front-sky-soft text-front-sky",
-    subjects: ["Fizyka", "Matematyka"],
-    bio: "Egzamin ósmoklasisty i liceum. Lubi zaczynać od zadań, które uczeń już prawie umie.",
-    free: 4,
-  },
-  {
-    initials: "MZ",
-    name: "Marta Zielińska",
-    tone: "bg-front-mint-soft text-front-mint",
-    subjects: ["Informatyka"],
-    bio: "Python, C++ i algorytmy. Przygotowuje do matury rozszerzonej i olimpiady.",
-    free: 5,
-  },
-]
+  // Landing pokazuje wyłącznie przedmioty, których ktoś naprawdę uczy —
+  // przedmiot bez nauczyciela to obietnica bez pokrycia. Stawka „od" liczy się
+  // z reguł cenowych i tylko dla poziomów, które ci nauczyciele prowadzą.
+  const subjectCards: SubjectCardData[] = subjects
+    .map((subject) => {
+      const taught = teachers.filter((teacher) =>
+        teacher.subjects.some((item) => item.id === subject.id)
+      )
+      const levelIds = new Set(
+        taught.flatMap(
+          (teacher) =>
+            teacher.subjects
+              .find((item) => item.id === subject.id)
+              ?.levels.map((level) => level.id) ?? []
+        )
+      )
 
-const PRICING = [
-  {
-    level: "Podstawówka",
-    description: "Klasy 4–8, w tym przygotowanie do egzaminu ósmoklasisty.",
-    price: 80,
-  },
-  {
-    level: "Szkoła średnia",
-    description: "Bieżący materiał, sprawdziany i poprawa ocen w liceum oraz technikum.",
-    price: 100,
-  },
-  {
-    level: "Matura",
-    description: "Podstawa i rozszerzenie, arkusze, powtórka całego zakresu.",
-    price: 120,
-  },
-]
+      const prices = levels
+        .filter((level) => levelIds.has(level.id))
+        .map((level) =>
+          resolveHourlyPrice(priceRules, {
+            subjectId: subject.id,
+            levelId: level.id,
+          })
+        )
+        .filter((price): price is number => price !== null)
 
-const GROUPS = [
-  {
-    name: "Grupa ósmoklasisty",
-    price: 250,
-    meta: "4 spotkania × 60 min w miesiącu",
-    points: ["Grupy 4–8 osób", "Stały termin w tygodniu", "Materiały po każdym spotkaniu"],
-  },
-  {
-    name: "Grupa maturalna",
-    price: 350,
-    meta: "4 spotkania × 90 min w miesiącu",
-    points: ["Grupy 4–8 osób", "Arkusze z poprzednich lat", "Powtórka całego zakresu"],
-  },
-]
+      return {
+        id: subject.id,
+        name: subject.name,
+        slug: subject.slug,
+        description: subject.description,
+        icon: subject.icon,
+        levels: levels.filter((level) => levelIds.has(level.id)),
+        fromPrice: prices.length > 0 ? Math.min(...prices) : null,
+        teacherCount: taught.length,
+      }
+    })
+    .filter((subject) => subject.teacherCount > 0)
 
-// ZAŚLEPKI: opinie są przykładowe i tak oznaczone na stronie.
-const REVIEWS = [
-  {
-    quote:
-      "Syn wszedł na zajęcia z jedynką ze sprawdzianu, a po dwóch miesiącach tłumaczył koledze funkcje kwadratowe.",
-    author: "Anna",
-    role: "mama ucznia, 2. klasa liceum",
-    tone: "bg-front-brand-soft text-front-brand",
-    initials: "A",
-  },
-  {
-    quote:
-      "Najbardziej pomogło to, że nie robiliśmy wszystkiego po kolei, tylko tego, co mi nie wychodziło.",
-    author: "Kuba",
-    role: "matura rozszerzona z matematyki",
-    tone: "bg-front-sky-soft text-front-sky",
-    initials: "K",
-  },
-  {
-    quote:
-      "Online działa u nas lepiej niż dojazdy. Tablica, zapis lekcji i zadania na kolejny tydzień w jednym miejscu.",
-    author: "Marta",
-    role: "mama ósmoklasistki",
-    tone: "bg-front-mint-soft text-front-mint",
-    initials: "M",
-  },
-]
+  // W karcie wyboru terminu zostają te same przedmioty co w sekcji niżej.
+  const pickerSubjects = subjectCards.map((subject) => ({
+    id: subject.id,
+    name: subject.name,
+    slug: subject.slug,
+  }))
 
-const FAQ = [
-  {
-    question: "Jak wygląda pierwsza lekcja?",
-    answer:
-      "Sprawdzamy, gdzie naprawdę jest problem — zwykle nie tam, gdzie ostatni sprawdzian. Wychodzisz z planem na kolejne tygodnie i nie zobowiązujesz się do żadnego pakietu.",
-  },
-  {
-    question: "Online czy stacjonarnie?",
-    answer:
-      "Obie formy kosztują tyle samo. Online prowadzimy na tablicy, na której widać cały tok rozwiązania, a zapis zostaje u ucznia. Stacjonarnie — u nauczyciela albo z dojazdem, jeśli mieścisz się w zasięgu.",
-  },
-  {
-    question: "Kiedy najpóźniej mogę odwołać lekcję?",
-    answer:
-      "Do 12 godzin przed terminem, bez żadnych kosztów. Później termin przepada, bo zwykle nie da się już wstawić w to miejsce nikogo innego.",
-  },
-  {
-    question: "Czym różnią się zajęcia grupowe od indywidualnych?",
-    answer:
-      "Grupa ma stały termin w tygodniu, 4–8 osób i rozliczenie miesięczne — wychodzi taniej, ale tempo jest wspólne. Zajęcia indywidualne idą dokładnie tam, gdzie potrzebuje uczeń.",
-  },
-  {
-    question: "Jak płacę za zajęcia?",
-    answer:
-      "Po lekcji: gotówką albo przelewem. Zajęcia grupowe rozliczamy z góry za miesiąc, niezależnie od tego, ile spotkań wypada w kalendarzu.",
-  },
-  {
-    question: "Czy uczeń musi mieć konto?",
-    answer:
-      "Nie. Termin można umówić bez zakładania konta — konto przydaje się tylko wtedy, gdy chcesz mieć historię lekcji w jednym miejscu.",
-  },
-]
+  const freeSlots: Record<string, number> = {}
+  for (const slot of board.slots) {
+    freeSlots[slot.teacherId] = (freeSlots[slot.teacherId] ?? 0) + 1
+  }
 
-export default function HomePage() {
+  const modes = new Set(
+    teachers.flatMap((teacher) =>
+      teacher.locations.map((location) => location.type)
+    )
+  )
+
+  const facts = [
+    { icon: Wallet, label: "Płacisz po lekcji" },
+    {
+      icon: Clock3,
+      label: `Odwołanie do ${settings.bookingMinLeadHours} h przed`,
+    },
+    {
+      icon: Video,
+      label:
+        modes.has("ONLINE") && modes.size > 1
+          ? "Online albo na miejscu"
+          : modes.has("ONLINE")
+            ? "Zajęcia online"
+            : "Zajęcia stacjonarne",
+    },
+  ]
+
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────────────── */}
@@ -226,28 +159,31 @@ export default function HomePage() {
                 wolną godzinę
                 <Squiggle className="absolute -bottom-1 left-0 h-[0.3em] w-full text-front-brand" />
               </span>{" "}
-              <span className="whitespace-nowrap">i zapisz się</span> w minutę
+              <span className="whitespace-nowrap">i zapisz się</span> w minutę
             </h1>
 
             <p className="mt-7 max-w-[46ch] text-lg leading-relaxed text-front-muted">
-              Matematyka, fizyka i informatyka — z nauczycielem, który
-              tłumaczy do skutku. Grafik na stronie jest prawdziwy: godzina,
-              którą widzisz, jest naprawdę wolna, a cenę znasz, zanim
-              napiszesz pierwszą wiadomość.
+              {subjectCards
+                .slice(0, 3)
+                .map((subject) => subject.name)
+                .join(", ")}{" "}
+              — z nauczycielem, który tłumaczy do skutku. Grafik na stronie jest
+              prawdziwy: godzina, którą widzisz, jest naprawdę wolna, a cenę
+              znasz, zanim napiszesz pierwszą wiadomość.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <a href="#kontakt" className={btnPrimary}>
-                Umów lekcję
+              <Link href="/terminy" className={btnPrimary}>
+                Zobacz wszystkie terminy
                 <ArrowRight />
-              </a>
-              <a href="#jak-to-dziala" className={btnSecondary}>
+              </Link>
+              <Link href="#jak-to-dziala" className={btnSecondary}>
                 Jak to działa
-              </a>
+              </Link>
             </div>
 
             <ul className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-x-6">
-              {HERO_FACTS.map((fact) => (
+              {facts.map((fact) => (
                 <li
                   key={fact.label}
                   className="flex items-center gap-2 font-semibold text-front-ink"
@@ -267,354 +203,48 @@ export default function HomePage() {
               </p>
             </div>
 
-            <SlotPicker />
+            <div className="relative">
+              {/* Naklejka. Obrót jest tu językiem, nie przypadkiem — dzielą go
+                  zakreślacz w nagłówkach i karteczki z opiniami. */}
+              <span className="absolute -top-4 -right-1 z-10 rotate-[7deg] rounded-2xl bg-front-sun-soft px-3.5 py-2 font-display text-sm leading-tight font-semibold text-front-sun shadow-[0_10px_20px_-14px_color-mix(in_oklch,var(--front-ink),transparent_40%)] ring-1 ring-front-sun/40 sm:text-base">
+                pierwsza lekcja
+                <br className="sm:hidden" /> bez zobowiązań
+              </span>
+
+              <SlotPicker
+                board={board}
+                subjects={pickerSubjects}
+                levels={levels}
+                currency={settings.currency}
+                note={
+                  board.slots.length > 0
+                    ? `${board.slots.length} ${plural(board.slots.length, "wolna godzina", "wolne godziny", "wolnych godzin")} w najbliższych ${board.days.length} dniach · liczone przy każdym wejściu`
+                    : "Wolne godziny wchodzą z grafiku nauczycieli w panelu."
+                }
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Przedmioty ───────────────────────────────────────────────── */}
-      <section id="przedmioty" className="bg-front-surface">
-        <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 sm:py-24">
-          <h2 className="max-w-[20ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
-            Trzy przedmioty, w których jesteśmy{" "}
-            <Marker tone="bg-front-mint-soft">naprawdę dobrzy</Marker>
-          </h2>
-          <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-front-muted">
-            Nie bierzemy wszystkiego, co się nawinie. Za to w tych trzech
-            doprowadzamy ucznia do momentu, w którym przestaje nas
-            potrzebować.
-          </p>
+      <SubjectsSection subjects={subjectCards} currency={settings.currency} />
 
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
-            {SUBJECTS.map((subject) => (
-              <article
-                key={subject.name}
-                className={cn(
-                  cardBase,
-                  "flex flex-col p-6 transition-transform duration-200 hover:-translate-y-1"
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex size-12 items-center justify-center rounded-2xl",
-                    subject.tone
-                  )}
-                >
-                  <subject.icon className="size-6" />
-                </span>
-                <h3 className="mt-5 font-display text-2xl font-semibold tracking-tight">
-                  {subject.name}
-                </h3>
-                <p className="mt-2 flex-1 leading-relaxed text-front-muted">
-                  {subject.description}
-                </p>
-                <div className="mt-5 flex flex-wrap gap-1.5">
-                  {subject.levels.map((level) => (
-                    <span
-                      key={level}
-                      className={cn(chip, "bg-front-ground text-front-muted")}
-                    >
-                      {level}
-                    </span>
-                  ))}
-                </div>
-                <p className="mt-5 border-t border-front-line pt-4 font-semibold">
-                  od{" "}
-                  <span className="font-display text-2xl">
-                    {subject.from} zł
-                  </span>{" "}
-                  <span className="text-front-muted">/ 60 min</span>
-                </p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+      <StepsSection />
 
-      {/* ── Jak to działa ────────────────────────────────────────────── */}
-      <section id="jak-to-dziala" className="bg-front-brand-soft">
-        <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 sm:py-24">
-          <h2 className="max-w-[18ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
-            Od pierwszej wiadomości do pierwszej lekcji
-          </h2>
+      <TeachersSection teachers={teachers.slice(0, 3)} freeSlots={freeSlots} />
 
-          <ol className="relative mt-12 grid gap-8 md:grid-cols-3 md:gap-6">
-            <div
-              aria-hidden
-              className="absolute top-6 right-12 left-12 hidden border-t-2 border-dashed border-front-line-strong md:block"
-            />
-            {STEPS.map((step, index) => (
-              <li key={step.title} className="relative">
-                <span className="flex size-12 items-center justify-center rounded-2xl bg-[var(--front-brand-solid)] font-display text-xl font-semibold text-[var(--front-on-brand)]">
-                  {index + 1}
-                </span>
-                <h3 className="mt-5 font-display text-2xl font-semibold tracking-tight">
-                  {step.title}
-                </h3>
-                <p className="mt-2 max-w-[42ch] leading-relaxed text-front-muted">
-                  {step.description}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+      <PricingSection
+        rows={priceTable}
+        groups={groups}
+        discountPercent={settings.groupDiscountPercent}
+        currency={settings.currency}
+      />
 
-      {/* ── Nauczyciele ──────────────────────────────────────────────── */}
-      <section id="nauczyciele" className="bg-front-surface">
-        <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 sm:py-24">
-          <h2 className="max-w-[16ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
-            Ludzie, którzy będą uczyć
-          </h2>
-          <p className="mt-4 flex flex-wrap items-center gap-2 text-front-muted">
-            <span className={sampleTag}>profile przykładowe</span>
-            prawdziwe wejdą z panelu, razem z ich grafikiem
-          </p>
+      <ReviewsSection reviews={reviews} />
 
-          <div
-            className={cn(
-              cardBase,
-              "mt-10 divide-y divide-front-line overflow-hidden"
-            )}
-          >
-            {TEACHERS.map((teacher) => (
-              <article key={teacher.name} className="p-6 sm:px-8">
-                <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-                  <span
-                    className={cn(
-                      "flex size-14 shrink-0 items-center justify-center rounded-2xl font-display text-xl font-semibold",
-                      teacher.tone
-                    )}
-                  >
-                    {teacher.initials}
-                  </span>
+      <FaqSection items={faq} />
 
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-display text-xl font-semibold tracking-tight">
-                      {teacher.name}
-                    </h3>
-                    <p className="text-sm font-semibold text-front-muted">
-                      {teacher.subjects.join(" · ")}
-                    </p>
-                  </div>
-
-                  <p className="flex w-full shrink-0 items-center gap-2 font-semibold whitespace-nowrap sm:w-auto">
-                    <Clock3 className="size-5 text-front-mint" />
-                    {teacher.free} wolnych godzin
-                  </p>
-                </div>
-
-                <p className="mt-3 leading-relaxed text-front-muted sm:pl-19">
-                  {teacher.bio}
-                </p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Cennik ───────────────────────────────────────────────────── */}
-      <section id="cennik" className="bg-front-ground">
-        <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 sm:py-24">
-          <h2 className="max-w-[20ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
-            Cena zależy{" "}
-            <span className="whitespace-nowrap">
-              <Marker tone="bg-front-sky-soft">od poziomu</Marker>,
-            </span>{" "}
-            nie od tego, jak pilne
-          </h2>
-          <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-front-muted">
-            Jedna stawka za godzinę zegarową — online i stacjonarnie tak
-            samo. Płatność po lekcji.
-          </p>
-
-          <div
-            className={cn(cardBase, "mt-12 divide-y divide-front-line overflow-hidden")}
-          >
-            {PRICING.map((tier) => (
-              <div
-                key={tier.level}
-                className="flex flex-wrap items-center justify-between gap-4 p-6 sm:px-8"
-              >
-                <div className="min-w-0">
-                  <h3 className="font-display text-2xl font-semibold tracking-tight">
-                    {tier.level}
-                  </h3>
-                  <p className="mt-1 max-w-[52ch] leading-relaxed text-front-muted">
-                    {tier.description}
-                  </p>
-                </div>
-                <p className="shrink-0 whitespace-nowrap">
-                  <span className="font-display text-3xl font-semibold">
-                    {tier.price} zł
-                  </span>
-                  <span className="ml-1 font-semibold text-front-muted">
-                    / 60 min
-                  </span>
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_1fr]">
-            {GROUPS.map((group) => (
-              <article key={group.name} className={cn(cardBase, "p-6 sm:p-8")}>
-                <div className="flex flex-wrap items-baseline justify-between gap-3">
-                  <h3 className="font-display text-2xl font-semibold tracking-tight">
-                    {group.name}
-                  </h3>
-                  <p className="whitespace-nowrap">
-                    <span className="font-display text-3xl font-semibold">
-                      {group.price} zł
-                    </span>
-                    <span className="ml-1 font-semibold text-front-muted">
-                      / mies.
-                    </span>
-                  </p>
-                </div>
-                <p className="mt-1 font-semibold text-front-muted">
-                  {group.meta}
-                </p>
-                <ul className="mt-5 space-y-2.5">
-                  {group.points.map((point) => (
-                    <li key={point} className="flex items-start gap-2.5">
-                      <CircleCheck className="mt-0.5 size-5 shrink-0 text-front-mint" />
-                      <span className="text-front-muted">{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
-
-          <p className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl bg-front-sun-soft px-5 py-4 font-semibold text-front-ink">
-            <Users className="size-5 text-front-sun" />
-            Uczysz się u nas indywidualnie? Zajęcia grupowe masz 20% taniej —
-            rabat naliczamy przy zapisie.
-          </p>
-        </div>
-      </section>
-
-      {/* ── Opinie ───────────────────────────────────────────────────── */}
-      <section className="bg-[var(--front-band-warm)]">
-        <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-6 sm:py-24">
-          <h2 className="max-w-[16ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
-            Co mówią uczniowie i rodzice
-          </h2>
-          <p className="mt-4 flex flex-wrap items-center gap-2 text-front-muted">
-            <span className={sampleTag}>opinie przykładowe</span>
-            tu wejdą wypowiedzi zatwierdzone w panelu
-          </p>
-
-          <div className="mt-12 grid gap-6 md:grid-cols-3 md:items-start">
-            {REVIEWS.map((review, index) => (
-              <figure
-                key={review.author}
-                className={cn(
-                  cardBase,
-                  "flex flex-col p-6",
-                  ["-rotate-1", "rotate-[0.7deg] md:mt-8", "-rotate-[0.5deg] md:mt-16"][
-                    index
-                  ]
-                )}
-              >
-                <div aria-hidden className="flex gap-0.5 text-front-sun">
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <Star key={index} className="size-4.5 fill-current" />
-                  ))}
-                </div>
-                <blockquote className="mt-4 flex-1 text-lg leading-relaxed">
-                  {review.quote}
-                </blockquote>
-                <figcaption className="mt-5 flex items-center gap-3 border-t border-front-line pt-4">
-                  <span
-                    className={cn(
-                      "flex size-10 items-center justify-center rounded-xl font-display font-semibold",
-                      review.tone
-                    )}
-                  >
-                    {review.initials}
-                  </span>
-                  <span>
-                    <span className="block font-semibold">{review.author}</span>
-                    <span className="block text-sm text-front-muted">
-                      {review.role}
-                    </span>
-                  </span>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FAQ ──────────────────────────────────────────────────────── */}
-      <section id="pytania" className="bg-front-surface">
-        <div className="mx-auto w-full max-w-3xl px-5 py-20 sm:px-6 sm:py-24">
-          <h2 className="font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance sm:text-5xl">
-            Pytania, które padają najczęściej
-          </h2>
-
-          <div
-            className={cn(cardBase, "mt-10 divide-y divide-front-line overflow-hidden")}
-          >
-            {FAQ.map((item) => (
-              <details key={item.question} className="group px-6 sm:px-7">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-5 py-5 font-display text-lg font-semibold [&::-webkit-details-marker]:hidden">
-                  {item.question}
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-front-ground text-front-brand transition-transform duration-200 group-open:rotate-180">
-                    <ChevronDown className="size-5" />
-                  </span>
-                </summary>
-                <p className="max-w-[68ch] pb-5 leading-relaxed text-front-muted">
-                  {item.answer}
-                </p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Kontakt ──────────────────────────────────────────────────── */}
-      <section id="kontakt" className="bg-front-ground px-5 pt-20 pb-20 sm:px-6 sm:pt-24 sm:pb-24">
-        <div className="mx-auto w-full max-w-6xl overflow-hidden rounded-[32px] bg-[var(--front-cta)] px-6 py-16 text-center sm:px-12">
-          <h2 className="mx-auto max-w-[18ch] font-display text-4xl leading-tight font-semibold tracking-[-0.02em] text-balance text-[var(--front-on-cta)] sm:text-5xl">
-            Napisz, z czym jest problem
-          </h2>
-          <p className="mx-auto mt-4 max-w-[52ch] text-lg leading-relaxed text-[var(--front-on-cta-muted)]">
-            Odpowiadamy tego samego dnia i od razu proponujemy wolny
-            termin. Pierwsza lekcja nie zobowiązuje do niczego dalej.
-          </p>
-
-          <div className="mt-9 flex flex-wrap justify-center gap-3">
-            <a
-              href="tel:+48000000000"
-              className={cn(
-                btnPrimary,
-                "bg-[var(--front-on-cta)] text-[var(--front-cta)] shadow-[0_4px_0_0_var(--front-cta-pill-edge)] hover:bg-[var(--front-on-cta-muted)] active:shadow-[0_1px_0_0_var(--front-cta-pill-edge)]"
-              )}
-            >
-              <Phone />
-              +48 000 000 000
-            </a>
-            <a
-              href="mailto:kontakt@korkinapatencie.pl"
-              className={cn(
-                btnSecondary,
-                "border-[var(--front-cta-border)] bg-transparent text-[var(--front-on-cta)] shadow-[0_4px_0_0_var(--front-cta-edge)] hover:border-[var(--front-on-cta)] active:shadow-[0_1px_0_0_var(--front-cta-edge)]"
-              )}
-            >
-              <Mail />
-              kontakt@korkinapatencie.pl
-            </a>
-          </div>
-
-          <p className="mt-7 flex items-center justify-center gap-2 font-semibold text-[var(--front-on-cta-muted)]">
-            <MapPin className="size-5" />
-            Online w całej Polsce · stacjonarnie w Krakowie
-          </p>
-        </div>
-      </section>
+      <CtaSection settings={settings} />
     </>
   )
 }
