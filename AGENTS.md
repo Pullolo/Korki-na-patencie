@@ -45,3 +45,43 @@ danych: `docs/PLAN.md`.
 - Pola formularzy: `Field`, `inputClass` i `FormError` z `components/dashboard/form-controls.tsx`.
 - Helpery dat są w `lib/dates.ts` — używaj `dayKey`/`monthKey` zamiast `toISOString()`.
 - Strony w panelu składają się z `Header` + `Panel`/`EmptyState`; listy dostają `StatusBadge`.
+
+## Strona publiczna (`app/(front)/**`)
+
+- Front i panel to dwa osobne systemy wizualne. Strona publiczna żyje pod
+  `data-surface="front"`, używa tokenów `--front-*` i komponentów z
+  `components/front/**`; nie sięga po `components/ui/*` ani po tokeny panelu
+  (`DESIGN.md`, Sealed-Surface Rule).
+- **Dane publiczne wyłącznie przez `lib/public/*`.** Komponent strony nie woła
+  `prisma` bezpośrednio — filtry `isPublished` / `isActive` / `APPROVED` /
+  `PUBLISHED` mieszkają w jednym miejscu, bo pominięcie jednego z nich to
+  wyciek treści.
+- Katalog (przedmioty, poziomy, nauczyciele, cennik, grupy, opinie, CMS) idzie
+  przez `unstable_cache` z tagami z `lib/tags.ts`. **Każda akcja panelu, która
+  zmienia coś widocznego na stronie, woła `revalidateTags(...)`** obok
+  `revalidatePath` — sama ścieżka odświeża tylko panel. Zmiana pokazuje się na
+  froncie przy kolejnym wejściu (stale-while-revalidate z `profile="max"`).
+- **Dostępności nie cache'ujemy nigdy.** Wolne terminy liczy `getSlotBoard()`
+  z `lib/public/availability.ts` przy każdym żądaniu — jednym zapytaniem na typ,
+  nie w pętli po nauczycielach. To samo dotyczy liczby miejsc w grupie i statusu
+  rezerwacji.
+- Akcje anonima leżą w `lib/actions/public/*`, **zwracają `{ ok, errors }`
+  zamiast rzucać** (formularz musi podświetlić pole) i zaczynają się od bramki
+  z `lib/actions/public/guard.ts`: pole-pułapka, podpisany znacznik czasu,
+  limit z adresu i z kontaktu. Adresu IP nie zapisujemy w żadnej tabeli.
+- Reguły dziedzinowe sprawdzamy **ponownie** w akcji, nawet jeśli przeglądarka
+  pokazała tylko poprawne wartości — między wyborem terminu a wysyłką ktoś mógł
+  go zająć.
+- Formularze publiczne: `useFormAction()` (`hooks/use-form-action.ts`) plus pola
+  z `components/front/forms/*`. Panelowy `useServerAction()` i
+  `components/dashboard/form-controls.tsx` zostają przy panelu.
+- Wspólna logika zapisu do grupy jest w `lib/enrollment.ts` — panel i front
+  wołają tę samą funkcję i dokładają wokół niej własną bramkę.
+- Konto ucznia (`/konto/**`) chroni `ensureAccountPage()` z `lib/auth.ts`:
+  wpuszcza każdego zalogowanego, bo nauczyciel i admin też mogą mieć własne
+  lekcje. To osobna bramka niż `ensureDashboardPage()`.
+- Nowa strona CMS nie może zająć slugu trasy stałej — lista jest w
+  `lib/public/reserved-slugs.ts` i czyta ją edytor stron oraz mapa witryny.
+- Treść, która wygląda na prawdziwą, a nią nie jest, idzie na listę w
+  `docs/ZASLEPKI.md`. Po przeniesieniu danych do bazy `sampleTag` już jej
+  nie oznacza.

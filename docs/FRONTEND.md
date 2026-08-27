@@ -527,3 +527,36 @@ przedmioty i poziomy. Wszystko inne dostaje `sampleTag`.
 | Zewnętrzna analityka obok `PageView` | M9 | odłożyć — własna tabela wystarcza i nie dokłada zgód |
 | Domena produkcyjna i `NEXT_PUBLIC_SITE_URL` | M0 | potrzebna wartość, choćby tymczasowa — bez niej OG i sitemap są bezużyteczne |
 | Wystawianie opinii przez gościa (bez konta) | M7 | odłożyć do etapu 4 — sensowne dopiero z linkiem w mailu po lekcji |
+
+---
+
+## 15. Stan realizacji (2026-08-27)
+
+Wszystkie kroki M0–M10 są zrobione. Co powstało poza planem albo inaczej,
+niż zakładał plan:
+
+- **Poziom w wyborze terminu.** Plan przewidywał ścieżkę przedmiot → dzień →
+  godzina i nic więcej. Cena zależy jednak od poziomu, więc chipy poziomów
+  siedzą w karcie jako rząd drugorzędny — wybór terminu zostaje trzyklikowy,
+  a kwota jest prawdziwa, nie „od". Dopisane do `DESIGN.md`.
+- **Kod zapisu do grupy.** `GroupEnrollment` nie miał pola `reference`, a
+  `/zapis/[kod]` bez niego nie istnieje. Migracja `20260827190000_enrollment_reference`
+  dokłada kolumnę i uzupełnia kody dla zapisów sprzed zmiany.
+- **Limit z adresu IP** liczymy w pamięci procesu, a nie zapytaniem do bazy:
+  planu nie dało się wykonać dosłownie, bo IP świadomie nigdzie nie zapisujemy.
+  Twardą granicą jest licznik po mailu i telefonie, ten już z bazy.
+- **Treść z landingu poszła do bazy przez seed** (`prisma/seed-content.ts`):
+  sześć pytań, dwa menu i trzy strony CMS. Od tego kroku ich źródłem jest panel.
+- **Ścieżki z kodem w liczniku ruchu** zbieramy pod jedną etykietą
+  (`/rezerwacja/[kod]`), żeby klucz dostępu do cudzego zgłoszenia nie leżał
+  w tabeli odsłon.
+
+Świadomie odłożone (zgodnie z sekcją 14):
+
+- Cache Components (`use cache`) — nadal `unstable_cache` z tagami.
+- Opinia gościa bez konta — sensowna dopiero z linkiem w mailu po lekcji.
+- Zewnętrzna analityka obok `PageView`.
+- Własny magazyn zdjęć nauczycieli — na razie avatar z Clerka albo inicjały.
+- Wyprowadzenie `ensureUserSynced()` z root layoutu (opcja B z sekcji 7).
+  Dopóki tam siedzi, żadna trasa się nie prerenderuje; to jedyna rzecz, która
+  dziś blokuje statyczny landing.

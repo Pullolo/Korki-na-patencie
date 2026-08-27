@@ -154,7 +154,7 @@ components:
 
 # Design System: Korki na patencie — strona publiczna
 
-> Ten dokument opisuje **wyłącznie stronę publiczną** (`app/page.tsx`, `components/front/**`, blok `--front-*` w `app/globals.css`). Panel pod `app/dashboard/**` to osobny, wcześniejszy system wizualny (shadcn na Base UI, tokeny `--background` / `--primary`, gęsty layout z paskiem 16rem) i pozostaje poza tym zapisem — nie dziedziczy stąd niczego i niczego tu nie oddaje.
+> Ten dokument opisuje **wyłącznie stronę publiczną** (`app/(front)/**`, `components/front/**`, blok `--front-*` w `app/globals.css`). Panel pod `app/dashboard/**` to osobny, wcześniejszy system wizualny (shadcn na Base UI, tokeny `--background` / `--primary`, gęsty layout z paskiem 16rem) i pozostaje poza tym zapisem — nie dziedziczy stąd niczego i niczego tu nie oddaje.
 
 ## Overview
 
@@ -162,7 +162,7 @@ components:
 
 Świat jest kanonem kategorii edukacyjnej zagranym prosto — poprzeczka to Duolingo, Khan i Brainly, bez ironii i bez prób bycia czymś innym. Grunt jest jasny, prawie biały z fioletowym podbiciem; winogronowy `--front-brand` jest jedynym głosem marki, a cztery kolory pomocnicze (słońce, koral, mięta, błękit) służą wyłącznie do rozróżniania rzeczy, nie do dekoracji. Powierzchnia jest gęsto zaokrąglona, przyciski dają się wcisnąć, a odręczne akcenty (zakreślacz, strzałka) mówią „ktoś to napisał ręką", nie „to jest ilustracja".
 
-Gęstość jest niska i celowa: jedna kolumna treści szeroka na 1152 px, sekcje oddzielone 80–96 px oddechu, akapity twardo ograniczone miarą (`max-w-[46ch]`, `max-w-[60ch]`, `max-w-[68ch]`). Strona nie zagaduje — mówi, kto uczy, ile to kosztuje i kiedy jest wolne, a jedynym elementem, który cokolwiek robi, jest karta wyboru terminu w pierwszym widoku.
+Gęstość jest niska i celowa: jedna kolumna treści szeroka na 1152 px, sekcje oddzielone 80–96 px oddechu, akapity twardo ograniczone miarą (`max-w-[46ch]`, `max-w-[60ch]`, `max-w-[68ch]`). Strona nie zagaduje — mówi, kto uczy, ile to kosztuje i kiedy jest wolne. Interakcji jest tyle, ile trzeba do umówienia lekcji: wybór terminu w pierwszym widoku, filtry katalogu jako linki i formularze na końcu ścieżki. Nic poza tym nie klika.
 
 Świat jest w całości dwumotywowy. Każdy token `--front-*` jest zdefiniowany dwa razy — jasno w `:root`, ciemno w `.dark` — więc żaden komponent frontu nigdy nie sięga po token panelu i żaden nie potrzebuje wariantu `dark:` poza dosłownym przełącznikiem ikony w `ThemeToggle`.
 
@@ -186,7 +186,7 @@ Paleta jest chłodno-fioletowa z czterema ciepłymi i zimnymi akcentami, które 
 ### Secondary — cztery kolory pomocnicze
 Każdy występuje w parze: nasycony do tekstu i ikon, mglisty do tła.
 - **Słońce** (`--front-sun` / `--front-sun-soft`): gwiazdki opinii, naklejka „pierwsza lekcja bez zobowiązań", pasek rabatu grupowego.
-- **Koral** (`--front-coral` / `--front-coral-soft`): zarezerwowany, dziś nieużywany. Czeka na czwartą kategorię (przedmiot albo status); dopóki nie ma dla niego znaczenia, nie wolno go użyć dekoracyjnie.
+- **Koral** (`--front-coral` / `--front-coral-soft`): status, który się nie udał — rezerwacja odrzucona, odwołana i nieobecność, zapis anulowany, pole formularza z błędem oraz czwarty przedmiot w kolejności z panelu. To jest ta czwarta kategoria, na którą kolor czekał; poza nią nadal nie wolno go użyć dekoracyjnie.
 - **Mięta** (`--front-mint` / `--front-mint-soft`): dostępność i potwierdzenia — wolne godziny, listy „co dostajesz", informatyka w wyborze przedmiotu.
 - **Błękit** (`--front-sky` / `--front-sky-soft`): fizyka i poziom cennika.
 
@@ -213,8 +213,8 @@ Każdy występuje w parze: nasycony do tekstu i ikon, mglisty do tła.
 
 ## Typography
 
-**Display Font:** Fredoka (400 / 500 / 600, `--font-display`, ładowana w `app/page.tsx`)
-**Body Font:** Nunito (zmienna, `--font-body`, ładowana w `app/page.tsx`)
+**Display Font:** Fredoka (400 / 500 / 600, `--font-display`, ładowana w `app/(front)/layout.tsx`)
+**Body Font:** Nunito (zmienna, `--font-body`, ładowana w `app/(front)/layout.tsx`)
 
 **Character:** Fredoka jest okrągła i przyjazna bez infantylizmu — nadaje nagłówkom i liczbom charakter tablicy, na której ktoś napisał cenę. Nunito pod spodem jest neutralna i czytelna w długich akapitach, z wyraźnie cięższym bold (700) używanym jako etykieta. Obie mają pełne `latin-ext`, bo cała strona jest po polsku.
 
@@ -241,7 +241,7 @@ Jedna kolumna centralna `max-w-6xl` (1152 px) z marginesem `20px` → `sm:24px`;
 
 Hero jest jedynym układem asymetrycznym: `lg:grid-cols-[1.02fr_0.98fr]` — tekst po lewej minimalnie szerszy niż karta terminu po prawej, wyrównane do środka w pionie, przerwa `48px` → `lg:64px`. Poniżej `lg` kolumny składają się w stos, a odręczna strzałka nad kartą znika (`hidden lg:flex`), bo nie ma już do czego wskazywać.
 
-Siatki treści są trzy i tylko trzy: `md:grid-cols-3` dla kart (przedmioty, kroki, opinie), `lg:grid-cols-[1fr_1fr]` dla dwóch kart grupowych, oraz pojedyncza kolumna wierszy dla list dzielonych. Wewnątrz wyboru terminu: `grid-cols-5` dla dni tygodnia (stały tydzień roboczy) i `grid-cols-3` → `sm:grid-cols-4` dla godzin.
+Siatki treści są trzy i tylko trzy: `md:grid-cols-3` dla kart (przedmioty, kroki, opinie), `lg:grid-cols-[1fr_1fr]` dla dwóch kart grupowych, oraz pojedyncza kolumna wierszy dla list dzielonych. Wewnątrz wyboru terminu: `grid-cols-5` dla **przesuwanego okna pięciu dni od dziś** (nie poniedziałek–piątek — grafik ma wyjątki także w soboty) i `grid-cols-3` → `sm:grid-cols-4` dla godzin. W wersji czternastodniowej na `/terminy` i profilach dni układają się w `grid-cols-7`, dwa rzędy.
 
 **Rytm pasm sekcji.** Tła idą naprzemiennie i nigdy dwa te same obok siebie: grunt (hero) → powierzchnia (przedmioty) → mgła markowa (jak to działa) → powierzchnia (nauczyciele) → grunt (cennik) → pasmo ciepłe (opinie) → powierzchnia (FAQ) → grunt z pełnokolorowym blokiem CTA w środku. Granicę sekcji wyznacza zmiana tła, nie linia.
 
@@ -250,6 +250,10 @@ Nagłówek strony jest przyklejony (`sticky top-0`, `h-72px`), półprzezroczyst
 ### Named Rules
 
 **The Measure Rule.** Każdy akapit ma zadeklarowaną miarę w `ch` (46–68). Tekst rozciągnięty na pełne 1152 px nie wchodzi na stronę.
+
+**The Thumb Rule.** Każda kontrolka, w którą trzeba trafić palcem — kafelek godziny, chip filtra, pole formularza, przycisk w karcie — ma co najmniej `44px` wysokości (`min-h-11`). Uczeń z telefonu jest pierwszym czytelnikiem, nie wariantem, a kafelek `12px` promienia nie zwalnia z tej wysokości.
+
+**The Mobile-Menu Rule.** Nawigacja główna znika poniżej `lg`, ale nie znika ze strony: przejmuje ją przycisk menu z panelem na pełną szerokość pod nagłówkiem. Kotwice wystarczały jednej stronie; kilkunastu podstronom nie.
 
 ## Elevation & Depth
 
@@ -310,11 +314,39 @@ Charakter: duże, ciężkie i fizyczne — w standardzie produktów edukacyjnych
 Etykiety Nunito `600` w kolorze przygaszonym, kapsuła `12px` na hover z mglistym tłem i markowym tekstem. Widoczna od `lg`; niżej nawigacja zostaje tylko w stopce, jako zawijany rząd linków bez kapsuł.
 
 ### Slot Picker (komponent sygnaturowy)
-Jedyny interaktywny element strony publicznej i cała treść prawej połowy pierwszego widoku. Karta `28px` z najwyższym cieniem w systemie, nad nią obrócona o `7°` naklejka w kolorze słońca. W środku cztery poziomy w stałej kolejności: przedmiot (owalne chipy) → dzień (siatka pięciu kafelków `12px` z obramowaniem `2px`) → godzina (kafelki `12px`, `tabular-nums`) → podsumowanie z ceną i przycisk główny na pełną szerokość.
+Element sygnaturowy strony i cała treść prawej połowy pierwszego widoku. Karta `28px` z najwyższym cieniem w systemie, nad nią obrócona o `7°` naklejka w kolorze słońca. W środku cztery poziomy w stałej kolejności: przedmiot (owalne chipy) → dzień (siatka pięciu kafelków `12px` z obramowaniem `2px`, każdy z dniem tygodnia i datą) → godzina (kafelki `12px`, `tabular-nums`, pod godziną imię nauczyciela w `12px`) → podsumowanie z ceną i przycisk główny na pełną szerokość.
+
+**Poziom w podsumowaniu, nie w ścieżce wyboru.** Od poziomu zależy stawka, a nie dostępność — dlatego chipy poziomów siedzą pod przedmiotem jako rząd drugorzędny (mniejsze, na gruncie, bez pierścienia), a nie jako piąty krok. Wybór terminu zostaje trzyklikowy: przedmiot → dzień → godzina.
+
+**Nauczyciel jest wynikiem, nie pytaniem.** Na kafelku godziny widać, u kogo jest wolna; pełne imię i nazwisko wchodzi do podsumowania. Nigdzie nie ma osobnego kroku „wybierz nauczyciela".
 
 Dzień bez wolnych godzin nie znika — zostaje jako kafelek przekreślony, na gruncie, z przygaszonym tekstem i `cursor-not-allowed`. Brak dostępności to informacja, nie pustka.
 
 **Jedyny autorski moment ruchu.** Zmiana przedmiotu albo dnia przemontowuje siatkę godzin (`key`), a każdy kafelek wjeżdża animacją `front-slot-in` (`0.42s`, `cubic-bezier(0.16, 1, 0.3, 1)`, z `opacity`, `translateY(8px)`, `scale(0.94)` i `blur(3px)`), kaskadą co `45ms`. Poza tym na stronie nie ma **żadnej** animacji wejścia — reszta ruchu to przejścia stanów po `150ms` (kolor) albo `200ms` (transform). Przy `prefers-reduced-motion: reduce` animacja skraca się do `0.01ms`, a wszystkie przejścia frontu są wyłączone.
+
+### Page hero (nagłówek podstrony)
+Kilkanaście tras nie może wymyślić kilkunastu wariantów tego samego nagłówka. `PageHero` daje jeden: siatka kropek jak w hero, okruszki Nunito `600` w kolorze przygaszonym, `h1` z miarą `20ch` i `text-balance`, akapit wprowadzenia `60ch` i miejsce na filtry albo chipy pod spodem. Pasmo stoi na gruncie, więc sekcja pod nim zaczyna się od powierzchni — rytm pasm zostaje bez zmian.
+
+### Filtry katalogu
+Rząd owalnych chipów na etykietę grupy filtrów (`Przedmiot`, `Poziom`, `Tryb`). Wybrany chip jest atramentowy, reszta leży na gruncie z przygaszonym tekstem. Każdy chip jest **linkiem**, nie przyciskiem: wynik da się wysłać, dodać do zakładek i otworzyć bez JavaScriptu, a kliknięcie w wybraną wartość ją zdejmuje. Pod filtrami zdanie z liczbą wyników i wejście „wyczyść filtry".
+
+### Formularze
+Pola frontu są osobne od panelowych i większe: wysokość `48px`, promień `12px`, obramowanie `2px` w kolorze linii, `focus` przechodzący na kolor marki. Etykieta Nunito `700` nad polem, podpowiedź pod nim `14px` przygaszona, słowo „(opcjonalnie)" przy polach nieobowiązkowych.
+
+- **Błąd pola:** obramowanie i tekst w koralu, komunikat pod polem z ikoną `16px`, podpięty przez `aria-describedby`.
+- **Błąd całego formularza:** pasek na mglistym koralu nad przyciskiem wysyłki, z `role="alert"`.
+- **Zgoda:** checkbox `20px` w kolorze marki, zdanie `14px` z linkiem do polityki prywatności. Jest przy każdym formularzu zbierającym kontakt.
+- **Sukces:** karta z okrągłą ikoną na mgle miętowej zamiast formularza — potwierdzenie zastępuje pola, nie dokleja się nad nimi.
+- **Pole-pułapka:** ukryte poza ekranem, `aria-hidden`, `tabindex="-1"`.
+
+### Sygnatury statusu
+Owalna plakietka Nunito `700`, `14px`, na mglistym wariancie koloru statusu: słońce = czeka, mięta = potwierdzone, błękit = już było, koral = odrzucone, odwołane, nieobecność. Ten sam słownik obsługuje rezerwacje i zapisy do grup.
+
+### Karty i listy konta
+Konto ucznia nie wprowadza nowej geometrii: karty `24px` z `cardBase`, chipy zakładek jak w filtrach, wiersze lekcji z tą samą listą metadanych co karta rezerwacji. Szczegóły i odwołanie prowadzą pod kod (`/rezerwacja/[kod]`) — jedna rezerwacja ma jedną stronę, nie dwie.
+
+### Treść z CMS-u
+Markdown renderowany do tej samej typografii co reszta strony: `h2` Fredoka `600` `30px`, akapity Nunito z miarą `68ch`, listy z markerem w kolorze marki, cytat na mgle markowej z promieniem `24px`, tabela przewijana w poziomie we własnym pudełku. Bez surowego HTML-u — markdown to cała władza, jaką ma treść z panelu.
 
 ### Themed browser surfaces
 Powierzchnie przeglądarki są częścią systemu, nie ustawieniem domyślnym. Pod `[data-surface="front"]`: `color-scheme` przełączany razem z motywem, tło `<html>` i `<body>` w kolorze gruntu (żeby overscroll nie pokazywał bieli panelu), pasek przewijania w `--front-scroll-thumb` / `--front-scroll-track`, karetka w kolorze marki, zaznaczenie tekstu na `--front-selection` z atramentowym tekstem, a `:focus-visible` dostaje obramowanie `3px` w kolorze marki z odstępem `2px` i promieniem `0.5rem`.
@@ -343,5 +375,6 @@ Treść, która czeka na prawdziwe dane, jest oznaczona jawnie: owalna plakietka
 - **Don't** uzależniać widoczności elementu od animacji — akcenty odręczne są statyczne z definicji.
 - **Don't** używać koloru pomocniczego dekoracyjnie; słońce, koral, mięta i błękit zawsze niosą kategorię, poziom albo status.
 - **Don't** obciążać nagłówka wagą powyżej `600` ani ładować Fredoki w cięższych odmianach.
-- **Don't** ukrywać braku dostępności — dzień bez godzin zostaje na siatce jako kafelek przekreślony.
+- **Don't** ukrywać braku dostępności — dzień bez godzin zostaje na siatce jako kafelek przekreślony, a pusty wynik filtrów mówi, co dalej (najbliższy wolny termin, zdjęcie filtra, kontakt).
+- **Don't** zostawiać kontrolki niższej niż `44px` tam, gdzie trafia się w nią palcem.
 - **Don't** rozciągać akapitu na pełną szerokość kolumny `max-w-6xl`.
