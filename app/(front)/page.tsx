@@ -9,20 +9,18 @@ import { FaqSection } from "@/components/front/sections/faq"
 import { PricingSection } from "@/components/front/sections/pricing"
 import { ReviewsSection } from "@/components/front/sections/reviews"
 import { StepsSection } from "@/components/front/sections/steps"
-import type { SubjectCardData } from "@/components/front/sections/subjects"
 import { SubjectsSection } from "@/components/front/sections/subjects"
 import { TeachersSection } from "@/components/front/sections/teachers"
 import { btnPrimary, btnSecondary } from "@/components/front/styles"
 import { plural } from "@/lib/format"
-import { resolveHourlyPrice } from "@/lib/pricing"
 import { getSlotBoard } from "@/lib/public/availability"
 import { listFaq } from "@/lib/public/faq"
 import { listGroups } from "@/lib/public/groups"
 import { listLevels } from "@/lib/public/levels"
-import { getPriceRules, getPriceTable } from "@/lib/public/pricing"
+import { getPriceTable } from "@/lib/public/pricing"
 import { listReviews } from "@/lib/public/reviews"
 import { getSiteSettings } from "@/lib/public/settings"
-import { listSubjects } from "@/lib/public/subjects"
+import { listSubjectCards } from "@/lib/public/subjects"
 import { listTeachers } from "@/lib/public/teachers"
 import { pageMetadata, seoDescription } from "@/lib/seo"
 
@@ -51,62 +49,21 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const [settings, subjects, levels, teachers, groups, reviews, faq, priceRules] =
+  const [settings, subjectCards, levels, teachers, groups, reviews, faq] =
     await Promise.all([
       getSiteSettings(),
-      listSubjects(),
+      listSubjectCards({ onlyTaught: true }),
       listLevels(),
       listTeachers(),
       listGroups(),
       listReviews({ limit: 3 }),
       listFaq(),
-      getPriceRules(),
     ])
 
   const [board, priceTable] = await Promise.all([
     getSlotBoard({ days: 5 }),
     getPriceTable(levels),
   ])
-
-  // Landing pokazuje wyłącznie przedmioty, których ktoś naprawdę uczy —
-  // przedmiot bez nauczyciela to obietnica bez pokrycia. Stawka „od" liczy się
-  // z reguł cenowych i tylko dla poziomów, które ci nauczyciele prowadzą.
-  const subjectCards: SubjectCardData[] = subjects
-    .map((subject) => {
-      const taught = teachers.filter((teacher) =>
-        teacher.subjects.some((item) => item.id === subject.id)
-      )
-      const levelIds = new Set(
-        taught.flatMap(
-          (teacher) =>
-            teacher.subjects
-              .find((item) => item.id === subject.id)
-              ?.levels.map((level) => level.id) ?? []
-        )
-      )
-
-      const prices = levels
-        .filter((level) => levelIds.has(level.id))
-        .map((level) =>
-          resolveHourlyPrice(priceRules, {
-            subjectId: subject.id,
-            levelId: level.id,
-          })
-        )
-        .filter((price): price is number => price !== null)
-
-      return {
-        id: subject.id,
-        name: subject.name,
-        slug: subject.slug,
-        description: subject.description,
-        icon: subject.icon,
-        levels: levels.filter((level) => levelIds.has(level.id)),
-        fromPrice: prices.length > 0 ? Math.min(...prices) : null,
-        teacherCount: taught.length,
-      }
-    })
-    .filter((subject) => subject.teacherCount > 0)
 
   // W karcie wyboru terminu zostają te same przedmioty co w sekcji niżej.
   const pickerSubjects = subjectCards.map((subject) => ({

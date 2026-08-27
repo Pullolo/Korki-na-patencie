@@ -1,5 +1,9 @@
-import { cachedQuery } from "@/lib/public/cache"
+import { resolveHourlyPrice } from "@/lib/pricing"
 import { prisma } from "@/lib/prisma"
+import { cachedQuery } from "@/lib/public/cache"
+import { listLevels } from "@/lib/public/levels"
+import { getPriceRules } from "@/lib/public/pricing"
+import { listTeachers } from "@/lib/public/teachers"
 import { TAGS } from "@/lib/tags"
 
 /**
@@ -102,4 +106,65 @@ export async function listSubjects(): Promise<PublicSubject[]> {
 
 export async function getSubject(slug: string): Promise<SubjectDetail | null> {
   return loadDetail(slug)
+}
+
+/**
+ * Karty przedmiotów gotowe do wyświetlenia: poziomy, których ktoś naprawdę
+ * uczy, najniższa stawka z cennika i liczba nauczycieli.
+ *
+ * Ta sama funkcja obsługuje landing (`onlyTaught`) i katalog — inaczej
+ * zasada „stawka od" żyłaby w dwóch miejscach i rozjechała się przy pierwszej
+ * zmianie cennika.
+ */
+export async function listSubjectCards({
+  onlyTaught = false,
+}: { onlyTaught?: boolean } = {}) {
+  const [subjects, levels, teachers, priceRules] = await Promise.all([
+    listSubjects(),
+    listLevels(),
+    listTeachers(),
+    getPriceRules(),
+  ])
+
+  const cards = subjects.map((subject) => {
+    const taught = teachers.filter((teacher) =>
+      teacher.subjects.some((item) => item.id === subject.id)
+    )
+    const levelIds = new Set(
+      taught.flatMap(
+        (teacher) =>
+          teacher.subjects
+            .find((item) => item.id === subject.id)
+            ?.levels.map((level) => level.id) ?? []
+      )
+    )
+
+    const taughtLevels = levels.filter((level) => levelIds.has(level.id))
+    const prices = (taughtLevels.length > 0 ? taughtLevels : levels)
+      .map((level) =>
+        resolveHourlyPrice(priceRules, {
+          subjectId: subject.id,
+          levelId: level.id,
+        })
+      )
+      .filter((price): price is number => price !== null)
+
+    return {
+      id: subject.id,
+      name: subject.name,
+      slug: subject.slug,
+      description: subject.description,
+      icon: subject.icon,
+      levels: taughtLevels,
+      // Przedmiot bez nauczyciela nie ma jeszcze ceny — nie zgadujemy jej
+      // z cennika poziomów, których nikt nie prowadzi.
+      fromPrice:
+        taughtLevels.length > 0 && prices.length > 0
+          ? Math.min(...prices)
+          : null,
+      teacherCount: taught.length,
+    }
+  })
+
+  return onlyTaught ? cards.filter((card) => card.teacherCount > 0) : cards
 }
