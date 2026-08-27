@@ -13,11 +13,10 @@ import {
   clientIp,
   honeypotFilled,
   recentBookingCount,
-  splitName,
   stampLooksHuman,
   tooManyFromAddress,
-  uniqueBookingReference,
 } from "@/lib/actions/public/guard"
+import { splitName, uniqueBookingReference } from "@/lib/reference"
 import { getSlotBoard } from "@/lib/public/availability"
 import { getPriceRules } from "@/lib/public/pricing"
 import { getSiteSettings } from "@/lib/public/settings"

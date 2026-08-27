@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache"
 
 import { requireTeacherAccess } from "@/lib/auth"
 import { toDateOnly } from "@/lib/dates"
+import type { EnrollmentInput } from "@/lib/enrollment"
+import { enrollStudent } from "@/lib/enrollment"
 import type { EnrollmentStatus } from "@/lib/generated/prisma/enums"
-import { applyDiscount } from "@/lib/pricing"
 import { prisma } from "@/lib/prisma"
 import { uniqueSlug } from "@/lib/slug"
 
@@ -168,84 +169,24 @@ export async function deleteCourseGroup(id: string) {
   refresh()
 }
 
+export type { EnrollmentInput } from "@/lib/enrollment"
+
 /**
- * Rabat na grupę należy się uczniom, którzy mają u nas zajęcia indywidualne.
- * Liczymy go w chwili zapisu i zapisujemy jako migawkę razem z ceną.
+ * Zapis ucznia przez nauczyciela. Reguły (rabat, limit miejsc, lista
+ * rezerwowa, migawka ceny) są wspólne z formularzem na stronie — tutaj
+ * dokładamy tylko bramkę autoryzacji.
  */
-async function discountFor(studentId: string | null) {
-  if (!studentId) return 0
-
-  const settings = await prisma.siteSettings.findUnique({
-    where: { id: "settings" },
-    select: { groupDiscountPercent: true },
-  })
-  const percent = settings?.groupDiscountPercent ?? 0
-  if (percent <= 0) return 0
-
-  const individual = await prisma.booking.findFirst({
-    where: {
-      studentId,
-      status: { in: ["CONFIRMED", "COMPLETED"] },
-    },
-    select: { id: true },
-  })
-  return individual ? percent : 0
-}
-
-export type EnrollmentInput = {
-  studentId: string | null
-  guestName: string | null
-  guestEmail: string | null
-  guestPhone: string | null
-  note: string | null
-}
-
 export async function enrollInGroup(groupId: string, input: EnrollmentInput) {
   const group = await prisma.courseGroup.findUnique({
     where: { id: groupId },
-    select: {
-      id: true,
-      teacherProfileId: true,
-      maxSeats: true,
-      pricePerMonth: true,
-      _count: { select: { enrollments: { where: { status: "ACTIVE" } } } },
-    },
+    select: { teacherProfileId: true },
   })
   if (!group) throw new Error("Nie znaleziono grupy.")
   await requireTeacherAccess(group.teacherProfileId)
 
-  if (!input.studentId && !input.guestName?.trim()) {
-    throw new Error("Wskaż ucznia z konta albo podaj imię i nazwisko.")
-  }
-
-  if (input.studentId) {
-    const existing = await prisma.groupEnrollment.findUnique({
-      where: { groupId_studentId: { groupId, studentId: input.studentId } },
-      select: { id: true },
-    })
-    if (existing) throw new Error("Ten uczeń jest już zapisany do tej grupy.")
-  }
-
-  // Po przekroczeniu limitu miejsc zapisujemy na listę rezerwową, nie odmawiamy.
-  const full = group._count.enrollments >= group.maxSeats
-  const discountPercent = await discountFor(input.studentId)
-
-  await prisma.groupEnrollment.create({
-    data: {
-      groupId,
-      studentId: input.studentId,
-      guestName: input.guestName?.trim() || null,
-      guestEmail: input.guestEmail?.trim() || null,
-      guestPhone: input.guestPhone?.trim() || null,
-      status: full ? "WAITLIST" : "ACTIVE",
-      discountPercent,
-      monthlyPrice: applyDiscount(group.pricePerMonth, discountPercent),
-      startedOn: toDateOnly(new Date()),
-      note: input.note?.trim() || null,
-    },
-  })
+  const result = await enrollStudent(groupId, input)
   refresh()
-  return { waitlisted: full, discountPercent }
+  return result
 }
 
 export async function setEnrollmentStatus(

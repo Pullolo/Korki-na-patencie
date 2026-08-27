@@ -208,3 +208,64 @@ export async function listGroupSlugs() {
     return []
   }
 }
+
+export type PublicEnrollment = {
+  reference: string
+  status: string
+  discountPercent: number
+  monthlyPrice: number
+  startedOn: Date
+  studentName: string
+  group: PublicGroup
+  /** Ile osób czeka przed tą, gdy zapis trafił na listę rezerwową. */
+  placeInLine: number | null
+}
+
+/**
+ * Zapis do grupy po kodzie — strona `/zapis/[kod]`. Jak przy rezerwacji,
+ * kod jest kluczem dostępu i nie pokazujemy nic o innych uczestnikach
+ * poza tym, ile osób czeka przed tą.
+ */
+export async function getEnrollmentByReference(
+  reference: string
+): Promise<PublicEnrollment | null> {
+  const enrollment = await prisma.groupEnrollment.findUnique({
+    where: { reference: reference.toUpperCase() },
+    select: {
+      reference: true,
+      status: true,
+      discountPercent: true,
+      monthlyPrice: true,
+      startedOn: true,
+      createdAt: true,
+      guestName: true,
+      student: { select: { firstName: true, lastName: true, email: true } },
+      group: { select: SELECT },
+    },
+  })
+  if (!enrollment) return null
+
+  const placeInLine =
+    enrollment.status === "WAITLIST"
+      ? await prisma.groupEnrollment.count({
+          where: {
+            groupId: (enrollment.group as { id: string }).id,
+            status: "WAITLIST",
+            createdAt: { lt: enrollment.createdAt },
+          },
+        })
+      : null
+
+  return {
+    reference: enrollment.reference,
+    status: enrollment.status,
+    discountPercent: enrollment.discountPercent,
+    monthlyPrice: enrollment.monthlyPrice,
+    startedOn: enrollment.startedOn,
+    studentName: enrollment.student
+      ? personName(enrollment.student)
+      : (enrollment.guestName ?? "Uczeń"),
+    group: toPublic(enrollment.group as Row),
+    placeInLine: placeInLine === null ? null : placeInLine + 1,
+  }
+}

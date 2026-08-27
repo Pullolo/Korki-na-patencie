@@ -323,6 +323,8 @@ model CourseGroup {
 
 model GroupEnrollment {
   id         String           @id @default(cuid())
+  /// Kod zapisu — klucz dostępu do strony statusu `/zapis/[kod]`.
+  reference  String           @unique
   groupId    String
   studentId  String?
   guestName  String?

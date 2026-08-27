@@ -583,6 +583,7 @@ async function main() {
       for (const entry of enrollees) {
         await prisma.groupEnrollment.create({
           data: {
+            reference: `GRP-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
             groupId: group.id,
             studentId: entry.student.id,
             discountPercent: entry.discount,

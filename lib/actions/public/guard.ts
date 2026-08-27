@@ -126,33 +126,3 @@ export async function recentEnrollmentCount(email: string | null, phone: string 
     },
   })
 }
-
-/** Kod dyktowany przez telefon — bez znaków, które łatwo pomylić (0/O, 1/I). */
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-
-export function randomCode(prefix: string, length = 4) {
-  const code = Array.from(
-    { length },
-    () => CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)]
-  ).join("")
-  return `${prefix}-${code}`
-}
-
-export async function uniqueBookingReference() {
-  for (let attempt = 0; attempt < 20; attempt++) {
-    const reference = randomCode("KOR")
-    const taken = await prisma.booking.findUnique({
-      where: { reference },
-      select: { id: true },
-    })
-    if (!taken) return reference
-  }
-  throw new Error("Nie udało się wygenerować numeru rezerwacji.")
-}
-
-/** „Jan Kowalski" → imię + reszta jako nazwisko; jedno słowo zostaje imieniem. */
-export function splitName(full: string) {
-  const parts = full.trim().split(/\s+/)
-  if (parts.length === 1) return { firstName: parts[0], lastName: null }
-  return { firstName: parts[0], lastName: parts.slice(1).join(" ") }
-}
