@@ -72,6 +72,26 @@ export const consent = z
 
 export const cuid = z.string().trim().min(1).max(40)
 
+/** Slug z adresu: małe litery, cyfry i myślniki — tak buduje je `slugify()`. */
+export const slug = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(1, "Brakuje identyfikatora.")
+  .max(80, "Identyfikator jest za długi.")
+  .regex(/^[a-z0-9-]+$/, "Nieprawidłowy identyfikator.")
+
+export const optionalSlug = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(80)
+  .transform((value) => value || null)
+  .refine(
+    (value) => value === null || /^[a-z0-9-]+$/.test(value),
+    "Nieprawidłowy identyfikator."
+  )
+
 export const optionalId = z
   .string()
   .trim()
