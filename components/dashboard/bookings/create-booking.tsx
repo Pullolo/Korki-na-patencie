@@ -17,7 +17,7 @@ import {
 } from "@/components/dashboard/form-controls"
 import { useServerAction } from "@/hooks/use-server-action"
 import { createBooking } from "@/lib/actions/booking-create"
-import { formatPrice } from "@/lib/format"
+import { formatDate, formatPrice, plural } from "@/lib/format"
 import { LocationType } from "@/lib/generated/prisma/enums"
 import { LOCATION_TYPE_LABELS } from "@/lib/labels"
 import { resolveHourlyPrice } from "@/lib/pricing"
@@ -91,6 +91,8 @@ export function CreateBooking({
     note: "",
   })
   const [allowOverlap, setAllowOverlap] = useState(false)
+  // 1 = pojedyncza lekcja. Zaznaczenie „co tydzień" podnosi to do serii.
+  const [repeatWeeks, setRepeatWeeks] = useState(1)
 
   function set<K extends keyof Values>(key: K, value: Values[K]) {
     setValues((prev) => ({ ...prev, [key]: value }))
@@ -139,6 +141,7 @@ export function CreateBooking({
     setOpen(false)
     setValues((prev) => ({ ...prev, student: EMPTY_STUDENT, note: "" }))
     setAllowOverlap(false)
+    setRepeatWeeks(1)
     if (closeHref) router.replace(closeHref)
   }
 
@@ -162,12 +165,22 @@ export function CreateBooking({
           confirmed: values.confirmed,
           note: values.note || null,
           allowOverlap,
+          repeatWeeks,
         }),
       close
     )
   }
 
   const hasConflict = Boolean(error?.startsWith("Termin koliduje"))
+
+  // Ostatni termin serii liczymy na składowych daty, tak samo jak serwer —
+  // dodanie 7×24 h przesunęłoby godzinę przy zmianie czasu.
+  const lastDate = (() => {
+    if (repeatWeeks < 2) return null
+    const [year, month, day] = values.date.split("-").map(Number)
+    if (!year || !month || !day) return null
+    return formatDate(new Date(year, month - 1, day + (repeatWeeks - 1) * 7))
+  })()
 
   const endTime = (() => {
     const [hour, minute] = values.time.split(":").map(Number)
@@ -356,6 +369,41 @@ export function CreateBooking({
         Od razu potwierdzona — termin jest już ustalony, nie czeka na akceptację
       </label>
 
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={repeatWeeks > 1}
+            onChange={(event) => setRepeatWeeks(event.target.checked ? 8 : 1)}
+            className="size-3.5 cursor-pointer accent-primary"
+          />
+          Powtarzaj co tydzień o tej samej porze
+        </label>
+
+        {repeatWeeks > 1 && (
+          <>
+            <input
+              type="number"
+              min={2}
+              max={52}
+              step={1}
+              value={repeatWeeks}
+              onChange={(event) =>
+                setRepeatWeeks(
+                  Math.min(52, Math.max(2, Number(event.target.value) || 2))
+                )
+              }
+              aria-label="Liczba lekcji w serii"
+              className={cn(inputClass, "h-7 w-16 px-2 py-0")}
+            />
+            <span>
+              {plural(repeatWeeks, "lekcja", "lekcje", "lekcji")}
+              {lastDate && ` · ostatnia ${lastDate}`}
+            </span>
+          </>
+        )}
+      </div>
+
       {hasConflict && (
         <label className="flex cursor-pointer items-center gap-2 text-xs text-destructive">
           <input
@@ -372,7 +420,9 @@ export function CreateBooking({
 
       <div className="flex items-center gap-2">
         <ActionButton onClick={submit} pending={pending}>
-          Zapisz lekcję
+          {repeatWeeks > 1
+            ? `Zapisz ${repeatWeeks} ${plural(repeatWeeks, "lekcję", "lekcje", "lekcji")}`
+            : "Zapisz lekcję"}
         </ActionButton>
         <ActionButton variant="ghost" onClick={close} disabled={pending}>
           Anuluj
