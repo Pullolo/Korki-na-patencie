@@ -6,7 +6,7 @@ import { SlotPicker } from "@/components/front/booking/slot-picker"
 import { PageHero } from "@/components/front/layout/page-hero"
 import { cardBase } from "@/components/front/styles"
 import { formStamp } from "@/lib/actions/public/guard"
-import { currentUser } from "@clerk/nextjs/server"
+import { getClerkUser } from "@/lib/clerk-user"
 import { formatLongDate, personName } from "@/lib/format"
 import { LOCATION_TYPE_LABELS } from "@/lib/labels"
 import { lessonPrice, resolveHourlyPrice } from "@/lib/pricing"
@@ -87,7 +87,7 @@ export default async function BookingPage({
   if (teacher && slot) {
     const [priceRules, clerkUser] = await Promise.all([
       getPriceRules(),
-      currentUser(),
+      getClerkUser(),
     ])
 
     const subject =

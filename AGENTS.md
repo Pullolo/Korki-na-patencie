@@ -23,6 +23,17 @@ danych: `docs/PLAN.md`.
   `ensureDashboardPage()` / `ensureAdminPage()` z `lib/auth.ts` w RSC oraz
   `requireDashboardUser()` / `requireAdmin()` / `requireTeacherAccess()` w każdej
   server action. Nigdy nie polegaj wyłącznie na proxy.
+- Sesję Clerka odświeża handshake, a ten działa **tylko** przy żądaniu
+  o dokument. Żądanie RSC (nawigacja z linku, prefetch) z nieważnym tokenem
+  wychodzi jako „wylogowany", więc `proxy.ts` oddaje wtedy 401 — Next zamienia
+  to na twarde przejście i sesja wraca. Nie odsyłaj takiego żądania na
+  `/sign-in`: redirect wpada do cache'u routera i wyrzuca z panelu losowo.
+  Z tego samego powodu stan logowania w nagłówku frontu liczy przeglądarka
+  (`components/front/layout/account-nav.tsx`), a nie serwerowy `<Show>`.
+- Konto Clerka dopisuje do bazy `ensureUserSynced()` — root layout i bramki
+  z `lib/auth.ts` renderują się równolegle, więc obie strony wołają tę samą,
+  objętą `cache()` funkcję. Brak wiersza w `users` to nie „niezalogowany":
+  bramka próbuje dosynchronizować i dopiero potem mówi, co jest nie tak.
 - Zapytania nauczyciela zawężaj przez `teacherScope(ctx)` — admin widzi wszystko,
   nauczyciel tylko własny profil.
 - Godziny dostępności trzymamy jako minuty od północy (`startMin`, `endMin`),

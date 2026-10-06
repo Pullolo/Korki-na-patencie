@@ -8,7 +8,7 @@ import { JsonLd } from "@/components/front/json-ld"
 import { PageHero } from "@/components/front/layout/page-hero"
 import { cardBase, chip } from "@/components/front/styles"
 import { formStamp } from "@/lib/actions/public/guard"
-import { currentUser } from "@clerk/nextjs/server"
+import { getClerkUser } from "@/lib/clerk-user"
 import { formatPrice, personName, plural, WEEKDAYS } from "@/lib/format"
 import { LOCATION_TYPE_LABELS } from "@/lib/labels"
 import { prisma } from "@/lib/prisma"
@@ -48,7 +48,7 @@ export default async function GroupPage({
 
   const [settings, clerkUser] = await Promise.all([
     getSiteSettings(),
-    currentUser(),
+    getClerkUser(),
   ])
 
   const account = clerkUser
