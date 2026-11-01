@@ -1,15 +1,18 @@
-import { currentUser } from "@clerk/nextjs/server"
+import { cache } from "react"
 
-import { roleFromClerk } from "@/lib/auth"
+import { getClerkUser, roleFromClerk } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
 /**
  * Dopisuje zalogowanego użytkownika Clerka do naszej bazy.
  * Wołane z root layoutu, więc idzie po ścieżce szybkiej (jeden findUnique)
  * i sięga po zapis dopiero przy pierwszym wejściu albo po zmianie roli.
+ *
+ * Memoizowane na żądanie: root layout renderuje się raz, ale przy nawigacji
+ * klientem Next potrafi wywołać layout ponownie w tym samym przebiegu.
  */
-export async function ensureUserSynced() {
-  const clerkUser = await currentUser()
+export const ensureUserSynced = cache(async () => {
+  const clerkUser = await getClerkUser()
   if (!clerkUser) return
 
   const email = clerkUser.emailAddresses?.[0]?.emailAddress
@@ -60,4 +63,4 @@ export async function ensureUserSynced() {
     // konto — nie wywracamy z tego powodu całej strony.
     console.error("Nie udało się zsynchronizować użytkownika:", error)
   }
-}
+})

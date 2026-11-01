@@ -1,5 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
+import { cache } from "react"
 
 import { UserRole } from "@/lib/generated/prisma/enums"
 import { prisma } from "@/lib/prisma"
@@ -16,6 +17,14 @@ export function roleFromClerk(user: {
   const upper = raw.toUpperCase()
   return upper in UserRole ? (upper as UserRole) : UserRole.STUDENT
 }
+
+/**
+ * `currentUser()` z Clerka to za każdym razem osobne wyjście do ich API.
+ * Jedna strona panelu pyta o tożsamość trzy razy (root layout, layout panelu,
+ * sama strona), więc bez memoizacji płacimy trzy round-tripy na render.
+ * `cache()` z Reacta trzyma wynik w obrębie jednego żądania.
+ */
+export const getClerkUser = cache(async () => currentUser())
 
 export function isAdmin(role: UserRole | undefined) {
   return role === UserRole.ADMIN
@@ -42,8 +51,8 @@ export type DashboardContext = {
   isAdmin: boolean
 }
 
-async function loadContext(): Promise<DashboardContext | null> {
-  const clerkUser = await currentUser()
+const loadContext = cache(async (): Promise<DashboardContext | null> => {
+  const clerkUser = await getClerkUser()
   if (!clerkUser) return null
 
   const role = roleFromClerk(clerkUser)
@@ -76,7 +85,7 @@ async function loadContext(): Promise<DashboardContext | null> {
     teacherProfileId: dbUser.teacherProfile?.id ?? null,
     isAdmin: role === UserRole.ADMIN,
   }
-}
+})
 
 /**
  * Dla layoutów i stron RSC — przekierowuje zamiast rzucać.
@@ -154,8 +163,8 @@ export type AccountContext = {
   imageUrl: string | null
 }
 
-async function loadAccount(): Promise<AccountContext | null> {
-  const clerkUser = await currentUser()
+const loadAccount = cache(async (): Promise<AccountContext | null> => {
+  const clerkUser = await getClerkUser()
   if (!clerkUser) return null
 
   const dbUser = await prisma.user.findUnique({
@@ -183,7 +192,7 @@ async function loadAccount(): Promise<AccountContext | null> {
     phone: dbUser.phone,
     imageUrl: dbUser.imageUrl,
   }
-}
+})
 
 /** Dla stron `/konto/**` — przekierowuje na logowanie zamiast rzucać. */
 export async function ensureAccountPage(): Promise<AccountContext> {
