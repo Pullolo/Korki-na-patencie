@@ -1,10 +1,12 @@
 "use client"
 
+import { useUser } from "@clerk/nextjs"
 import { Menu, X } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
 import type { NavItem } from "@/lib/public/nav"
+import { canAccessDashboard, roleFromClerk } from "@/lib/roles"
 import { cn } from "@/lib/utils"
 
 /**
@@ -20,6 +22,7 @@ export function MobileNav({
   extra?: { label: string; href: string }[]
 }) {
   const [open, setOpen] = useState(false)
+  const { isSignedIn, user } = useUser()
 
   useEffect(() => {
     if (!open) return
@@ -30,6 +33,17 @@ export function MobileNav({
     return () => document.removeEventListener("keydown", onKey)
   }, [open])
 
+  // Linki konta liczymy tu, a nie na serwerze: przy żądaniu RSC Clerk potrafi
+  // zwrócić stan „wylogowany" mimo ważnej sesji (patrz `AccountNav`).
+  const account = user
+    ? [
+        ...(canAccessDashboard(roleFromClerk(user))
+          ? [{ label: "Panel", href: "/dashboard" }]
+          : []),
+        { label: "Moje konto", href: "/konto" },
+      ]
+    : []
+
   const links = [
     ...items.flatMap((item) => [
       { label: item.label, href: item.href },
@@ -39,6 +53,7 @@ export function MobileNav({
       })),
     ]),
     ...extra,
+    ...(isSignedIn ? account : []),
   ]
 
   return (

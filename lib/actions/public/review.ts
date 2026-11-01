@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
+import { getClerkUser } from "@/lib/clerk-user"
 import { notify } from "@/lib/notifications"
-import { getClerkUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import * as v from "@/lib/validation"
 

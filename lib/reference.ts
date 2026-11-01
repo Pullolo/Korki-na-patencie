@@ -51,6 +51,27 @@ export function uniqueBookingReference() {
   )
 }
 
+/**
+ * Kody dla serii lekcji wpisanej z panelu. Zajętość w bazie sprawdza już
+ * `uniqueCode()`, ale seria nie jest jeszcze zapisana, więc powtórzenie
+ * wewnątrz niej trzeba wyłapać w pamięci — inaczej dwie lekcje z tej samej
+ * serii dostałyby jeden kod i druga nadpisałaby pierwszą na unikalnym indeksie.
+ */
+export async function uniqueBookingReferences(count: number) {
+  const references = new Set<string>()
+  for (
+    let attempt = 0;
+    references.size < count && attempt < count + 20;
+    attempt++
+  ) {
+    references.add(await uniqueBookingReference())
+  }
+  if (references.size < count) {
+    throw new Error("Nie udało się wygenerować kodów dla serii lekcji.")
+  }
+  return [...references]
+}
+
 export function uniqueEnrollmentReference() {
   return uniqueCode("GRP", async (reference) =>
     Boolean(

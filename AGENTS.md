@@ -27,10 +27,23 @@ danych: `docs/PLAN.md`.
   `requireAccountUser()` w każdej server action. Nigdy nie polegaj wyłącznie
   na proxy — dopasowanie po ścieżce potrafi się rozjechać z routingiem Nexta
   (dlatego Clerk wycofał `createRouteMatcher()`).
-- O tożsamość pytaj przez `getClerkUser()` z `lib/auth.ts`, nigdy przez
+- Sesję Clerka odświeża handshake, a ten działa **tylko** przy żądaniu
+  o dokument. Żądanie RSC (nawigacja z linku, prefetch) z nieważnym tokenem
+  wychodzi jako „wylogowany", więc `proxy.ts` oddaje wtedy 401 — Next zamienia
+  to na twarde przejście i sesja wraca. Nie odsyłaj takiego żądania na
+  `/sign-in`: redirect wpada do cache'u routera i wyrzuca z panelu losowo.
+  Z tego samego powodu stan logowania w nagłówku frontu liczy przeglądarka
+  (`components/front/layout/account-nav.tsx`), a nie serwerowy `<Show>`.
+- O tożsamość pytaj przez `getClerkUser()` z `lib/clerk-user.ts`, nigdy przez
   `currentUser()` wprost. Każde `currentUser()` to osobne wyjście do API Clerka;
   jedna strona panelu pyta trzy razy (root layout, layout panelu, strona),
-  więc bez memoizacji `cache()` płacimy trzy round-tripy na render.
+  więc bez memoizacji `cache()` płacimy trzy round-tripy na render. Czyste
+  reguły ról siedzą w `lib/roles.ts` — bez `next/headers` i bez SDK Clerka,
+  żeby nagłówek frontu mógł policzyć to samo w przeglądarce.
+- Konto Clerka dopisuje do bazy `ensureUserSynced()` — root layout i bramki
+  z `lib/auth.ts` renderują się równolegle, więc obie strony wołają tę samą,
+  objętą `cache()` funkcję. Brak wiersza w `users` to nie „niezalogowany":
+  bramka próbuje dosynchronizować i dopiero potem mówi, co jest nie tak.
 - Zapytania nauczyciela zawężaj przez `teacherScope(ctx)` — admin widzi wszystko,
   nauczyciel tylko własny profil.
 - Godziny dostępności trzymamy jako minuty od północy (`startMin`, `endMin`),

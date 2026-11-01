@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { after } from "next/server"
 import { z } from "zod"
 
+import { getClerkUser } from "@/lib/clerk-user"
 import { conflictMessage, findScheduleConflicts } from "@/lib/conflicts"
 import {
   bookingForTeacherMail,
@@ -13,7 +14,6 @@ import {
 import { formatLongDate, formatTime, personName } from "@/lib/format"
 import { notify } from "@/lib/notifications"
 import { lessonPrice, resolveHourlyPrice } from "@/lib/pricing"
-import { getClerkUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import {
   clientIp,

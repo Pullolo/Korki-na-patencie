@@ -4,11 +4,12 @@ import { revalidatePath } from "next/cache"
 
 import { requireTeacherAccess } from "@/lib/auth"
 import { conflictMessage, findScheduleConflicts } from "@/lib/conflicts"
+import { formatDate } from "@/lib/format"
 import type { LocationType } from "@/lib/generated/prisma/enums"
 import { notify } from "@/lib/notifications"
 import { resolveHourlyPrice } from "@/lib/pricing"
 import { prisma } from "@/lib/prisma"
-import { splitName, uniqueBookingReference } from "@/lib/reference"
+import { splitName, uniqueBookingReferences } from "@/lib/reference"
 
 /**
  * Ręczny zapis lekcji z panelu — ustalonej przez telefon, nie przez formularz
@@ -39,6 +40,12 @@ export type CreateBookingInput = {
   confirmed: boolean
   note: string | null
   allowOverlap: boolean
+  /**
+   * Ile lekcji co tydzień o tej samej porze — 1 to pojedynczy wpis.
+   * Każdy tydzień to osobna rezerwacja, bo tak się ją odwołuje i rozlicza.
+   * Cykl na stałe (z miesięcznym rozliczeniem) to `CourseGroup`, nie to.
+   */
+  repeatWeeks: number
 }
 
 function clean(value: string | null | undefined) {
@@ -87,13 +94,18 @@ async function resolveStudentId(input: CreateBookingInput) {
   return { studentId: created.id, created: true }
 }
 
-function parseStart(date: string, time: string) {
+/**
+ * Kolejne tygodnie liczymy na składowych daty, a nie przez dodanie 7×24 h:
+ * między październikiem a marcem wypada zmiana czasu i lekcja przesunęłaby się
+ * o godzinę. Przepełnienie dnia (`day + 21`) Date domyka samo.
+ */
+function parseStart(date: string, time: string, weekOffset = 0) {
   const [year, month, day] = date.split("-").map(Number)
   const [hour, minute] = time.split(":").map(Number)
   if (!year || !month || !day || Number.isNaN(hour) || Number.isNaN(minute)) {
     throw new Error("Nieprawidłowa data albo godzina.")
   }
-  return new Date(year, month - 1, day, hour, minute, 0, 0)
+  return new Date(year, month - 1, day + weekOffset * 7, hour, minute, 0, 0)
 }
 
 async function resolvePrice(input: CreateBookingInput, durationMin: number) {
@@ -130,8 +142,20 @@ export async function createBooking(input: CreateBookingInput) {
     throw new Error("Cena musi mieścić się między 0 a 100 000.")
   }
 
-  const startsAt = parseStart(input.date, input.time)
-  const endsAt = new Date(startsAt.getTime() + durationMin * 60_000)
+  const repeatWeeks = Math.round(input.repeatWeeks || 1)
+  if (repeatWeeks < 1 || repeatWeeks > 52) {
+    throw new Error("Lekcja może się powtarzać od 1 do 52 tygodni.")
+  }
+
+  // Pierwszy termin waliduje datę i godzinę, reszta to te same składowe
+  // przesunięte o kolejne tygodnie.
+  const terms = Array.from({ length: repeatWeeks }, (_, week) => {
+    const startsAt = parseStart(input.date, input.time, week)
+    return {
+      startsAt,
+      endsAt: new Date(startsAt.getTime() + durationMin * 60_000),
+    }
+  })
 
   if (input.locationId) {
     const location = await prisma.location.findFirst({
@@ -144,35 +168,59 @@ export async function createBooking(input: CreateBookingInput) {
   }
 
   if (!input.allowOverlap) {
-    const conflicts = await findScheduleConflicts({
-      teacherProfileId: input.teacherProfileId,
-      startsAt,
-      endsAt,
-    })
-    if (conflicts.length > 0) throw new Error(conflictMessage(conflicts))
+    // Serię sprawdzamy w całości i odmawiamy jej w całości — lepiej pokazać
+    // wszystkie zajęte tygodnie naraz, niż zapisać połowę i zostawić dziury.
+    const collisions: string[] = []
+    for (const term of terms) {
+      const conflicts = await findScheduleConflicts({
+        teacherProfileId: input.teacherProfileId,
+        startsAt: term.startsAt,
+        endsAt: term.endsAt,
+      })
+      if (conflicts.length === 0) continue
+      if (terms.length === 1) throw new Error(conflictMessage(conflicts))
+      collisions.push(
+        `${formatDate(term.startsAt)} — ${conflictMessage(conflicts).replace(/^Termin koliduje z: /, "").replace(/\.$/, "")}`
+      )
+    }
+    if (collisions.length > 0) {
+      throw new Error(
+        `Termin koliduje w ${collisions.length} z ${terms.length} tygodni: ${collisions.join("; ")}.`
+      )
+    }
   }
 
   const { studentId, created } = await resolveStudentId(input)
   const price = await resolvePrice(input, durationMin)
 
-  const booking = await prisma.booking.create({
-    data: {
-      reference: await uniqueBookingReference(),
-      teacherProfileId: input.teacherProfileId,
-      studentId,
-      subjectId: input.subjectId,
-      levelId: input.levelId,
-      locationId: input.locationId,
-      mode: input.mode,
-      startsAt,
-      endsAt,
-      price,
-      status: input.confirmed ? "CONFIRMED" : "PENDING",
-      confirmedAt: input.confirmed ? new Date() : null,
-      internalNote: clean(input.note),
-    },
-    select: { id: true, reference: true },
-  })
+  const references = await uniqueBookingReferences(terms.length)
+  const confirmedAt = input.confirmed ? new Date() : null
+
+  // Jedna transakcja: albo wchodzi cała seria, albo nic. Inaczej nieudany
+  // ósmy tydzień zostawiłby siedem lekcji, o których nikt nie wie.
+  const bookings = await prisma.$transaction(
+    terms.map((term, index) =>
+      prisma.booking.create({
+        data: {
+          reference: references[index],
+          teacherProfileId: input.teacherProfileId,
+          studentId,
+          subjectId: input.subjectId,
+          levelId: input.levelId,
+          locationId: input.locationId,
+          mode: input.mode,
+          startsAt: term.startsAt,
+          endsAt: term.endsAt,
+          price,
+          status: input.confirmed ? "CONFIRMED" : "PENDING",
+          confirmedAt,
+          internalNote: clean(input.note),
+        },
+        select: { id: true, reference: true },
+      })
+    )
+  )
+  const booking = bookings[0]
 
   // Nauczyciel nie potrzebuje powiadomienia o lekcji, którą sam wpisał —
   // ale gdy zrobił to za niego admin, musi się o niej dowiedzieć.
@@ -181,10 +229,16 @@ export async function createBooking(input: CreateBookingInput) {
     select: { userId: true },
   })
   if (teacher && teacher.userId !== ctx.userId) {
+    // Jedno powiadomienie na serię — osiem osobnych nic by nie wniosło.
     await notify({
       type: "BOOKING_CREATED",
-      title: "Nowa lekcja w Twoim grafiku",
-      message: `${input.studentName.trim()} · ${input.date}, ${input.time}`,
+      title:
+        terms.length === 1
+          ? "Nowa lekcja w Twoim grafiku"
+          : `Nowa seria ${terms.length} lekcji w Twoim grafiku`,
+      message: `${input.studentName.trim()} · ${input.date}, ${input.time}${
+        terms.length === 1 ? "" : " · co tydzień"
+      }`,
       link: `/dashboard/rezerwacje/${booking.id}`,
       userId: teacher.userId,
     })
@@ -200,5 +254,6 @@ export async function createBooking(input: CreateBookingInput) {
     id: booking.id,
     reference: booking.reference,
     createdStudent: created,
+    count: bookings.length,
   }
 }

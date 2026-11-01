@@ -8,9 +8,9 @@ import { JsonLd } from "@/components/front/json-ld"
 import { PageHero } from "@/components/front/layout/page-hero"
 import { cardBase, chip } from "@/components/front/styles"
 import { formStamp } from "@/lib/actions/public/guard"
+import { getClerkUser } from "@/lib/clerk-user"
 import { formatPrice, personName, plural, WEEKDAYS } from "@/lib/format"
 import { LOCATION_TYPE_LABELS } from "@/lib/labels"
-import { getClerkUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getGroup } from "@/lib/public/groups"
 import { getSiteSettings } from "@/lib/public/settings"
@@ -108,7 +108,8 @@ export default async function GroupPage({
     },
     hasCourseInstance: {
       "@type": "CourseInstance",
-      courseMode: group.location?.type === "ONLINE" ? "Online" : "Onsite",
+      courseMode:
+        group.location?.type === "ONLINE" ? "Online" : "Onsite",
       courseSchedule: {
         "@type": "Schedule",
         repeatFrequency: "P1W",

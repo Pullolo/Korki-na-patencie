@@ -1,14 +1,11 @@
-import { Show, SignInButton, UserButton } from "@clerk/nextjs"
-import { currentUser } from "@clerk/nextjs/server"
-import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 
+import { AccountNav } from "@/components/front/layout/account-nav"
 import { BrandMark } from "@/components/front/layout/brand-mark"
 import { MobileNav } from "@/components/front/layout/mobile-nav"
 import { NavLinks } from "@/components/front/layout/nav-links"
 import { btnSmall } from "@/components/front/styles"
 import { ThemeToggle } from "@/components/front/theme-toggle"
-import { canAccessDashboard, roleFromClerk } from "@/lib/auth"
 import { getNav } from "@/lib/public/nav"
 import { getSiteSettings } from "@/lib/public/settings"
 import { cn } from "@/lib/utils"
@@ -17,17 +14,12 @@ import { cn } from "@/lib/utils"
  * Nagłówek strony publicznej: znak marki, nawigacja z bazy i wejście w konto.
  * Główne wezwanie prowadzi do `/rezerwacja`, nie do rejestracji — konto nie
  * jest bramką do umówienia lekcji (`PRODUCT.md`).
+ *
+ * Część zależną od logowania renderuje `AccountNav` w przeglądarce — serwer
+ * przy żądaniu RSC nie zawsze widzi świeżą sesję Clerka.
  */
 export async function SiteHeader() {
-  const [nav, settings, user] = await Promise.all([
-    getNav("HEADER"),
-    getSiteSettings(),
-    currentUser(),
-  ])
-
-  const showDashboardLink = user
-    ? canAccessDashboard(roleFromClerk(user))
-    : false
+  const [nav, settings] = await Promise.all([getNav("HEADER"), getSiteSettings()])
 
   return (
     <header className="sticky top-0 z-50 border-b border-front-line bg-front-surface/90 backdrop-blur-sm">
@@ -39,45 +31,7 @@ export async function SiteHeader() {
         <div className="flex items-center gap-1.5">
           <ThemeToggle />
 
-          {showDashboardLink && (
-            <Link
-              href="/dashboard"
-              className={cn(
-                btnSmall,
-                "hidden bg-front-ground text-front-ink hover:bg-front-brand-soft hover:text-front-brand sm:inline-flex"
-              )}
-            >
-              Panel
-              <ArrowRight />
-            </Link>
-          )}
-
-          <Show when="signed-out">
-            <SignInButton mode="modal">
-              <button
-                type="button"
-                className={cn(
-                  btnSmall,
-                  "hidden text-front-ink hover:bg-front-brand-soft hover:text-front-brand sm:inline-flex"
-                )}
-              >
-                Zaloguj się
-              </button>
-            </SignInButton>
-          </Show>
-
-          <Show when="signed-in">
-            <Link
-              href="/konto"
-              className={cn(
-                btnSmall,
-                "hidden text-front-ink hover:bg-front-brand-soft hover:text-front-brand sm:inline-flex"
-              )}
-            >
-              Moje konto
-            </Link>
-            <UserButton />
-          </Show>
+          <AccountNav />
 
           <Link
             href="/rezerwacja"
@@ -91,13 +45,7 @@ export async function SiteHeader() {
 
           <MobileNav
             items={nav}
-            extra={[
-              { label: "Kontakt", href: "/kontakt" },
-              ...(showDashboardLink
-                ? [{ label: "Panel", href: "/dashboard" }]
-                : []),
-              ...(user ? [{ label: "Moje konto", href: "/konto" }] : []),
-            ]}
+            extra={[{ label: "Kontakt", href: "/kontakt" }]}
           />
         </div>
       </div>

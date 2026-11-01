@@ -6,10 +6,10 @@ import { SlotPicker } from "@/components/front/booking/slot-picker"
 import { PageHero } from "@/components/front/layout/page-hero"
 import { cardBase } from "@/components/front/styles"
 import { formStamp } from "@/lib/actions/public/guard"
+import { getClerkUser } from "@/lib/clerk-user"
 import { formatLongDate, personName } from "@/lib/format"
 import { LOCATION_TYPE_LABELS } from "@/lib/labels"
 import { lessonPrice, resolveHourlyPrice } from "@/lib/pricing"
-import { getClerkUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getSlotBoard } from "@/lib/public/availability"
 import { listLevels } from "@/lib/public/levels"
@@ -80,8 +80,9 @@ export default async function BookingPage({
       : null
 
   const slot =
-    dayBoard?.slots.find((item) => item.startsAt === startsAt?.toISOString()) ??
-    null
+    dayBoard?.slots.find(
+      (item) => item.startsAt === startsAt?.toISOString()
+    ) ?? null
 
   if (teacher && slot) {
     const [priceRules, clerkUser] = await Promise.all([
@@ -139,7 +140,9 @@ export default async function BookingPage({
                 teacherName: teacher.name,
                 teacherSlug: teacher.slug,
                 locationName: slot.locationName,
-                modeLabel: slot.mode ? LOCATION_TYPE_LABELS[slot.mode] : null,
+                modeLabel: slot.mode
+                  ? LOCATION_TYPE_LABELS[slot.mode]
+                  : null,
               }}
               subjectSlug={subject?.slug ?? null}
               subjectName={subject?.name ?? null}

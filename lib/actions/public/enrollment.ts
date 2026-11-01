@@ -11,10 +11,10 @@ import {
   stampLooksHuman,
   tooManyFromAddress,
 } from "@/lib/actions/public/guard"
+import { getClerkUser } from "@/lib/clerk-user"
 import { enrollmentMail, sendEmail } from "@/lib/email"
 import { EnrollmentError, enrollStudent } from "@/lib/enrollment"
 import { notify } from "@/lib/notifications"
-import { getClerkUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getSiteSettings } from "@/lib/public/settings"
 import { revalidateTags, TAGS } from "@/lib/tags"
