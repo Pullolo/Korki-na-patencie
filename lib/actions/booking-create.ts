@@ -8,6 +8,7 @@ import type { LocationType } from "@/lib/generated/prisma/enums"
 import { notify } from "@/lib/notifications"
 import { resolveHourlyPrice } from "@/lib/pricing"
 import { prisma } from "@/lib/prisma"
+import { splitName, uniqueBookingReference } from "@/lib/reference"
 
 /**
  * Ręczny zapis lekcji z panelu — ustalonej przez telefon, nie przez formularz
@@ -38,32 +39,6 @@ export type CreateBookingInput = {
   confirmed: boolean
   note: string | null
   allowOverlap: boolean
-}
-
-/** Kod dyktowany przez telefon — bez znaków, które łatwo pomylić (0/O, 1/I). */
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-
-async function uniqueReference() {
-  for (let attempt = 0; attempt < 20; attempt++) {
-    const code = Array.from(
-      { length: 4 },
-      () => CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)]
-    ).join("")
-    const reference = `KOR-${code}`
-    const taken = await prisma.booking.findUnique({
-      where: { reference },
-      select: { id: true },
-    })
-    if (!taken) return reference
-  }
-  throw new Error("Nie udało się wygenerować numeru rezerwacji.")
-}
-
-/** „Jan Kowalski" → imię + reszta jako nazwisko; jedno słowo zostaje imieniem. */
-function splitName(full: string) {
-  const parts = full.trim().split(/\s+/)
-  if (parts.length === 1) return { firstName: parts[0], lastName: null }
-  return { firstName: parts[0], lastName: parts.slice(1).join(" ") }
 }
 
 function clean(value: string | null | undefined) {
@@ -182,7 +157,7 @@ export async function createBooking(input: CreateBookingInput) {
 
   const booking = await prisma.booking.create({
     data: {
-      reference: await uniqueReference(),
+      reference: await uniqueBookingReference(),
       teacherProfileId: input.teacherProfileId,
       studentId,
       subjectId: input.subjectId,

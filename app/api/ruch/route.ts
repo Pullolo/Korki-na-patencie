@@ -1,5 +1,6 @@
 import { after, type NextRequest } from "next/server"
 
+import { tooManyFromAddress } from "@/lib/actions/public/guard"
 import { prisma } from "@/lib/prisma"
 
 /**
@@ -43,10 +44,32 @@ function referrerHost(value: unknown) {
   }
 }
 
+/**
+ * Adres tylko do liczenia limitu — nigdzie go nie zapisujemy.
+ * Bez tego licznika endpoint jest otwartym zaproszeniem do zapchania tabeli
+ * `page_views` przez pętlę `curl`, a statystyki ruchu robią się bezużyteczne.
+ */
+function addressOf(request: NextRequest) {
+  const forwarded = request.headers.get("x-forwarded-for")
+  if (forwarded) return forwarded.split(",")[0]?.trim() || null
+  return request.headers.get("x-real-ip")
+}
+
 export async function POST(request: NextRequest) {
   const userAgent = request.headers.get("user-agent") ?? ""
   if (BOT.test(userAgent)) {
     return new Response(null, { status: 204 })
+  }
+
+  // Człowiek klikający po stronie nie zrobi 120 odsłon na kwadrans;
+  // skrypt robi tyle w sekundę.
+  if (
+    tooManyFromAddress(addressOf(request), "ruch", {
+      limit: 120,
+      windowMs: 900_000,
+    })
+  ) {
+    return new Response(null, { status: 429 })
   }
 
   let body: unknown
@@ -56,8 +79,13 @@ export async function POST(request: NextRequest) {
     return new Response(null, { status: 400 })
   }
 
-  const payload = body as { path?: unknown; referrer?: unknown; sessionId?: unknown }
-  const path = typeof payload.path === "string" ? payload.path.slice(0, 300) : null
+  const payload = body as {
+    path?: unknown
+    referrer?: unknown
+    sessionId?: unknown
+  }
+  const path =
+    typeof payload.path === "string" ? payload.path.slice(0, 300) : null
 
   if (!path || !path.startsWith("/")) {
     return new Response(null, { status: 400 })

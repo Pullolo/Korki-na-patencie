@@ -1,7 +1,7 @@
 "use server"
 
-import { currentUser } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
+import { after } from "next/server"
 import { z } from "zod"
 
 import {
@@ -11,9 +11,12 @@ import {
   stampLooksHuman,
   tooManyFromAddress,
 } from "@/lib/actions/public/guard"
+import { enrollmentMail, sendEmail } from "@/lib/email"
 import { EnrollmentError, enrollStudent } from "@/lib/enrollment"
 import { notify } from "@/lib/notifications"
+import { getClerkUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getSiteSettings } from "@/lib/public/settings"
 import { revalidateTags, TAGS } from "@/lib/tags"
 import * as v from "@/lib/validation"
 
@@ -86,7 +89,7 @@ export async function enrollPublic(
 
   // Zalogowany uczeń dostaje zapis przypięty do konta — i tylko wtedy może
   // złapać rabat, bo rabat wynika z jego historii lekcji.
-  const clerkUser = await currentUser()
+  const clerkUser = await getClerkUser()
   const account = clerkUser
     ? await prisma.user.findUnique({
         where: { clerkId: clerkUser.id },
@@ -115,6 +118,21 @@ export async function enrollPublic(
       message: `${data.name} · ${group.name}`,
       link: "/dashboard/grupy",
       userId: group.teacherProfile.userId,
+    })
+
+    // Kod zapisu to jedyny dostęp do jego statusu — musi trafić na maila.
+    after(async () => {
+      const settings = await getSiteSettings()
+      await sendEmail({
+        to: data.email,
+        ...enrollmentMail({
+          reference: result.reference,
+          studentName: data.name,
+          groupName: group.name,
+          waitlisted: result.waitlisted,
+          siteName: settings.siteName,
+        }),
+      })
     })
 
     revalidatePath("/dashboard/grupy")

@@ -11,6 +11,7 @@ import { formatDateTime, formatPrice } from "@/lib/format"
 import type { BookingStatus } from "@/lib/generated/prisma/enums"
 import { LOCATION_TYPE_LABELS } from "@/lib/labels"
 import type { LocationType } from "@/lib/generated/prisma/enums"
+import { tooManyCodeLookups } from "@/lib/actions/public/guard"
 import { getBookingByReference } from "@/lib/public/bookings"
 import { getSiteSettings } from "@/lib/public/settings"
 import { cn } from "@/lib/utils"
@@ -42,6 +43,9 @@ export default async function BookingStatusPage({
   params: Promise<{ kod: string }>
 }) {
   const { kod } = await params
+  // Kod jest kluczem dostępu — seryjne zgadywanie zatrzymujemy przed bazą.
+  if (await tooManyCodeLookups("booking")) notFound()
+
   const booking = await getBookingByReference(kod)
   if (!booking) notFound()
 
@@ -54,7 +58,10 @@ export default async function BookingStatusPage({
   return (
     <>
       <PageHero
-        crumbs={[{ label: "Rezerwacja", href: "/rezerwacja" }, { label: kod.toUpperCase() }]}
+        crumbs={[
+          { label: "Rezerwacja", href: "/rezerwacja" },
+          { label: kod.toUpperCase() },
+        ]}
         title={
           status === "PENDING"
             ? "Zgłoszenie przyjęte"

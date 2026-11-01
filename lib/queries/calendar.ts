@@ -62,27 +62,64 @@ export async function getWeekSchedule(
 }> {
   const weekEnd = new Date(weekStart.getTime() + 7 * 86_400_000)
 
-  const rows = await prisma.booking.findMany({
-    where: {
-      ...(teacherProfileId ? { teacherProfileId } : {}),
-      status: { in: VISIBLE_STATUSES },
-      startsAt: { gte: weekStart, lt: weekEnd },
-    },
-    orderBy: { startsAt: "asc" },
-    select: {
-      id: true,
-      reference: true,
-      status: true,
-      startsAt: true,
-      endsAt: true,
-      guestName: true,
-      student: { select: { firstName: true, lastName: true, email: true } },
-      subject: { select: { name: true } },
-      teacherProfile: {
-        select: { user: { select: { firstName: true, lastName: true } } },
+  // Wszystko, co da się pobrać naraz, leci naraz — cztery sekwencyjne `await`
+  // zamieniały jeden tydzień kalendarza w cztery round-tripy do bazy.
+  const [rows, groups, profile, busy] = await Promise.all([
+    prisma.booking.findMany({
+      where: {
+        ...(teacherProfileId ? { teacherProfileId } : {}),
+        status: { in: VISIBLE_STATUSES },
+        startsAt: { gte: weekStart, lt: weekEnd },
       },
-    },
-  })
+      orderBy: { startsAt: "asc" },
+      select: {
+        id: true,
+        reference: true,
+        status: true,
+        startsAt: true,
+        endsAt: true,
+        guestName: true,
+        student: { select: { firstName: true, lastName: true, email: true } },
+        subject: { select: { name: true } },
+        teacherProfile: {
+          select: { user: { select: { firstName: true, lastName: true } } },
+        },
+      },
+    }),
+    prisma.courseGroup.findMany({
+      where: {
+        isActive: true,
+        ...(teacherProfileId ? { teacherProfileId } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        weekday: true,
+        startMin: true,
+        meetingMinutes: true,
+        maxSeats: true,
+        startsOn: true,
+        endsOn: true,
+        isActive: true,
+        teacherProfile: {
+          select: { user: { select: { firstName: true, lastName: true } } },
+        },
+        _count: { select: { enrollments: { where: { status: "ACTIVE" } } } },
+      },
+    }),
+    teacherProfileId ? getTeacherSchedule(teacherProfileId) : null,
+    teacherProfileId
+      ? prisma.booking.findMany({
+          where: {
+            teacherProfileId,
+            status: { in: BUSY_STATUSES },
+            startsAt: { lt: weekEnd },
+            endsAt: { gt: weekStart },
+          },
+          select: { startsAt: true, endsAt: true },
+        })
+      : [],
+  ])
 
   const bookings: CalendarBooking[] = rows.map((booking) => ({
     id: booking.id,
@@ -96,28 +133,6 @@ export async function getWeekSchedule(
   }))
 
   // Grupy spotykają się cyklicznie — rozwijamy je na konkretne terminy tygodnia.
-  const groups = await prisma.courseGroup.findMany({
-    where: {
-      isActive: true,
-      ...(teacherProfileId ? { teacherProfileId } : {}),
-    },
-    select: {
-      id: true,
-      name: true,
-      weekday: true,
-      startMin: true,
-      meetingMinutes: true,
-      maxSeats: true,
-      startsOn: true,
-      endsOn: true,
-      isActive: true,
-      teacherProfile: {
-        select: { user: { select: { firstName: true, lastName: true } } },
-      },
-      _count: { select: { enrollments: { where: { status: "ACTIVE" } } } },
-    },
-  })
-
   const groupMeetings: CalendarGroupMeeting[] = groups.flatMap((group) =>
     groupMeetingsInRange([group], weekStart, 7).map((meeting) => ({
       id: group.id,
@@ -130,20 +145,7 @@ export async function getWeekSchedule(
     }))
   )
 
-  if (!teacherProfileId) return { bookings, freeSlots: [], groupMeetings }
-
-  const profile = await getTeacherSchedule(teacherProfileId)
   if (!profile) return { bookings, freeSlots: [], groupMeetings }
-
-  const busy = await prisma.booking.findMany({
-    where: {
-      teacherProfileId,
-      status: { in: BUSY_STATUSES },
-      startsAt: { lt: weekEnd },
-      endsAt: { gt: weekStart },
-    },
-    select: { startsAt: true, endsAt: true },
-  })
 
   const days = computeAvailability({
     from: weekStart,

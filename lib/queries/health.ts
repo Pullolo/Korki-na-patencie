@@ -1,3 +1,4 @@
+import { emailEnabled } from "@/lib/email"
 import { plural } from "@/lib/format"
 import { prisma } from "@/lib/prisma"
 
@@ -80,9 +81,57 @@ async function checkClerk(): Promise<HealthCheck> {
   }
 }
 
-/** Rzeczy, które psują się najczęściej: baza i dostawca logowania. */
+/**
+ * Poczta nie jest usługą, którą się „odpytuje" — sprawdzamy konfigurację,
+ * bo najczęstsza awaria to jej brak, a ta jest cicha: rezerwacje wpadają
+ * normalnie, tylko nikt nie dostaje maila.
+ */
+function checkEmail(): HealthCheck {
+  const configured = emailEnabled()
+  return {
+    name: "Poczta",
+    ok: configured,
+    latencyMs: null,
+    detail: configured
+      ? "Maile transakcyjne włączone (potwierdzenia i decyzje idą do ucznia)."
+      : "Brak RESEND_API_KEY albo EMAIL_FROM — uczeń nie dostanie kodu rezerwacji, a nauczyciel powiadomienia o zgłoszeniu.",
+  }
+}
+
+/**
+ * Adres serwisu wchodzi do canonicali, mapy witryny, obrazów OG i linków
+ * w mailach. Zostawiony na localhoście psuje je wszystkie naraz i po cichu.
+ */
+function checkSiteUrl(): HealthCheck {
+  const value = process.env.NEXT_PUBLIC_SITE_URL
+  const local = !value || /localhost|127\.0\.0\.1/.test(value)
+  const production = process.env.NODE_ENV === "production"
+
+  if (!local) {
+    return {
+      name: "Adres serwisu",
+      ok: true,
+      latencyMs: null,
+      detail: `Linki w mailach, canonical i mapa witryny budowane z „${value}".`,
+    }
+  }
+
+  // Lokalnie adres na localhoście jest w porządku i nie ma o czym mówić;
+  // dopiero na produkcji oznacza, że wszystkie linki wychodzą donikąd.
+  return {
+    name: "Adres serwisu",
+    ok: !production,
+    latencyMs: null,
+    detail: production
+      ? `NEXT_PUBLIC_SITE_URL ${value ? `wskazuje na „${value}"` : "nie jest ustawiony"} — linki w mailach i mapie witryny prowadzą donikąd.`
+      : `Adres deweloperski „${value ?? "http://localhost:3000"}" — na produkcji ustaw NEXT_PUBLIC_SITE_URL na prawdziwą domenę.`,
+  }
+}
+
+/** Rzeczy, które psują się najczęściej: baza, logowanie, poczta i adres. */
 export async function runHealthChecks(): Promise<HealthCheck[]> {
-  return Promise.all([checkDatabase(), checkClerk()])
+  const [database, clerk] = await Promise.all([checkDatabase(), checkClerk()])
+  return [database, clerk, checkEmail(), checkSiteUrl()]
 }
 
 /** Konfiguracja, którą warto mieć pod ręką przy diagnozie. */
@@ -103,6 +152,10 @@ export function environmentSummary() {
       )
         ? "produkcyjny"
         : "deweloperski",
+    },
+    {
+      label: "Poczta",
+      value: emailEnabled() ? "Resend skonfigurowany" : "wyłączona",
     },
     {
       label: "Płatności",

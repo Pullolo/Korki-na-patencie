@@ -50,6 +50,7 @@ export default async function BookingsPage({
 }) {
   const ctx = await ensureDashboardPage()
   const status = parseStatus((await searchParams).status)
+  const now = new Date()
 
   const [bookings, counts, settings, formOptions] = await Promise.all([
     getBookings(ctx, { status }).catch(() => []),
@@ -153,6 +154,15 @@ export default async function BookingsPage({
                           {formatTime(booking.startsAt)}–
                           {formatTime(booking.endsAt)}
                         </p>
+                        {/* Zgłoszenie, którego termin już minął, wygląda na
+                            liście jak każde inne — a decyzja „potwierdź" nie ma
+                            wtedy sensu, bo lekcji i tak nikt nie poprowadzi. */}
+                        {booking.status === "PENDING" &&
+                          booking.endsAt < now && (
+                            <p className="mt-0.5 text-xs font-medium text-destructive">
+                              termin minął
+                            </p>
+                          )}
                       </td>
                       <td className="px-4 py-3">
                         <p className="text-foreground">

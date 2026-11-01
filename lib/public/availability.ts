@@ -324,8 +324,3 @@ export async function getTeacherDays(
 ) {
   return getSlotBoard({ teacherProfileId, ...options })
 }
-
-/** Najbliższy wolny termin — do zdania „najbliżej: czwartek 17:00". */
-export function firstSlot(board: SlotBoard) {
-  return board.slots[0] ?? null
-}

@@ -1,15 +1,30 @@
+import { randomBytes } from "node:crypto"
+
 import { prisma } from "@/lib/prisma"
+
+/** Zgodne z `v.referenceCode`, które przepuszcza 4–8 znaków (stare kody). */
+const CODE_LENGTH = 8
 
 /**
  * Kody, które uczeń dyktuje przez telefon albo przepisuje z ekranu.
  * Alfabet bez znaków, które łatwo pomylić: bez 0/O i bez 1/I.
+ *
+ * **Długość jest sprawą bezpieczeństwa, nie kosmetyki.** Kod jest jedynym
+ * kluczem do strony `/rezerwacja/[kod]`: pokazuje termin i wiadomość ucznia,
+ * i pozwala lekcję odwołać. Cztery znaki to nieco ponad milion kombinacji —
+ * przy kilkuset rezerwacjach w bazie ślepe zgadywanie trafia w rozsądnym
+ * czasie. Osiem znaków to ~1,1 × 10¹², czyli poza zasięgiem skanera.
+ * Drugą warstwą jest limit prób z adresu (`lib/actions/public/guard.ts`).
  */
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
-export function randomCode(prefix: string, length = 4) {
+export function randomCode(prefix: string, length = CODE_LENGTH) {
+  // `Math.random()` nie jest przewidziany do sekretów — kod rezerwacji nim
+  // jest, więc losujemy z generatora kryptograficznego.
+  const bytes = randomBytes(length)
   const code = Array.from(
-    { length },
-    () => CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)]
+    bytes,
+    (byte) => CODE_ALPHABET[byte % CODE_ALPHABET.length]
   ).join("")
   return `${prefix}-${code}`
 }

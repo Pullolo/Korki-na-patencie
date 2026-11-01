@@ -1,13 +1,19 @@
 "use server"
 
-import { currentUser } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
+import { after } from "next/server"
 import { z } from "zod"
 
 import { conflictMessage, findScheduleConflicts } from "@/lib/conflicts"
-import { formatLongDate, formatTime } from "@/lib/format"
+import {
+  bookingForTeacherMail,
+  bookingReceivedMail,
+  sendEmail,
+} from "@/lib/email"
+import { formatLongDate, formatTime, personName } from "@/lib/format"
 import { notify } from "@/lib/notifications"
 import { lessonPrice, resolveHourlyPrice } from "@/lib/pricing"
+import { getClerkUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import {
   clientIp,
@@ -163,24 +169,6 @@ export async function requestBooking(
 
   const endsAt = new Date(startsAt.getTime() + slot.minutes * 60_000)
 
-  // Druga siatka bezpieczeństwa: kolizja liczona wprost z bazy, razem
-  // z oczekującymi zgłoszeniami i spotkaniami grup.
-  const conflicts = await findScheduleConflicts({
-    teacherProfileId: teacher.id,
-    startsAt,
-    endsAt,
-    statuses: ["PENDING", "CONFIRMED"],
-  })
-  if (conflicts.length > 0) {
-    return {
-      ok: false,
-      errors: { startsAt: conflictMessage(conflicts) },
-      alternatives: board.slots
-        .filter((item) => item.startsAt !== iso)
-        .map((item) => ({ startsAt: item.startsAt, time: item.time })),
-    }
-  }
-
   const priceRules = await getPriceRules()
   const hourly = resolveHourlyPrice(priceRules, {
     levelId: level?.id ?? null,
@@ -192,7 +180,7 @@ export async function requestBooking(
   // gościem — nie przypinamy zgłoszenia do cudzego konta tylko dlatego, że
   // ktoś wpisał jego adres. Ucznia założonego ręcznie w panelu (bez konta
   // w Clerku) wolno dopiąć, bo to ten sam człowiek wracający po lekcję.
-  const clerkUser = await currentUser()
+  const clerkUser = await getClerkUser()
   let studentId: string | null = null
 
   if (clerkUser) {
@@ -209,27 +197,70 @@ export async function requestBooking(
     if (known && !known.clerkId) studentId = known.id
   }
 
-  const booking = await prisma.booking.create({
-    data: {
-      reference: await uniqueBookingReference(),
+  const reference = await uniqueBookingReference()
+
+  /**
+   * Sprawdzenie kolizji i zapis muszą być jedną operacją.
+   *
+   * Samo „sprawdź, potem zapisz" przepuszcza dwóch uczniów, którzy klikną tę
+   * samą godzinę w tej samej sekundzie: obaj widzą wolny termin, obaj go
+   * dostają, a nauczyciel ma dwie lekcje na 17:00. Blokada doradcza na
+   * identyfikatorze nauczyciela ustawia takie zgłoszenia w kolejkę, więc drugie
+   * liczy kolizję już po zapisie pierwszego. Blokada żyje do końca transakcji
+   * i dotyczy jednego nauczyciela — reszta grafiku chodzi równolegle.
+   *
+   * Tego nie da się zastąpić ograniczeniem w bazie: panel świadomie pozwala
+   * nauczycielowi nałożyć lekcje (`allowOverlap`), a twarde ograniczenie
+   * odebrałoby mu tę możliwość.
+   */
+  const outcome = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(1, hashtext(${teacher.id}))`
+
+    const conflicts = await findScheduleConflicts({
       teacherProfileId: teacher.id,
-      studentId,
-      guestName: studentId ? null : data.name,
-      guestEmail: studentId ? null : data.email,
-      guestPhone: data.phone,
-      subjectId: subject?.id ?? null,
-      levelId: level?.id ?? null,
-      locationId: slot.locationId,
-      mode: slot.mode ?? "ONLINE",
       startsAt,
       endsAt,
-      price: hourly === null ? null : lessonPrice(hourly, slot.minutes),
-      status: settings.bookingAutoConfirm ? "CONFIRMED" : "PENDING",
-      confirmedAt: settings.bookingAutoConfirm ? new Date() : null,
-      studentNote: data.note,
-    },
-    select: { id: true, reference: true },
+      statuses: ["PENDING", "CONFIRMED"],
+      client: tx,
+    })
+    if (conflicts.length > 0) {
+      return { kind: "taken" as const, message: conflictMessage(conflicts) }
+    }
+
+    const row = await tx.booking.create({
+      data: {
+        reference,
+        teacherProfileId: teacher.id,
+        studentId,
+        guestName: studentId ? null : data.name,
+        guestEmail: studentId ? null : data.email,
+        guestPhone: data.phone,
+        subjectId: subject?.id ?? null,
+        levelId: level?.id ?? null,
+        locationId: slot.locationId,
+        mode: slot.mode ?? "ONLINE",
+        startsAt,
+        endsAt,
+        price: hourly === null ? null : lessonPrice(hourly, slot.minutes),
+        status: settings.bookingAutoConfirm ? "CONFIRMED" : "PENDING",
+        confirmedAt: settings.bookingAutoConfirm ? new Date() : null,
+        studentNote: data.note,
+      },
+      select: { id: true, reference: true },
+    })
+    return { kind: "created" as const, booking: row }
   })
+
+  if (outcome.kind === "taken") {
+    return {
+      ok: false,
+      errors: { startsAt: outcome.message },
+      alternatives: board.slots
+        .filter((item) => item.startsAt !== iso)
+        .map((item) => ({ startsAt: item.startsAt, time: item.time })),
+    }
+  }
+  const booking = outcome.booking
 
   // Uczeń wpisany ręcznie w panelu mógł nie mieć telefonu — teraz go podał.
   if (studentId) {
@@ -249,6 +280,41 @@ export async function requestBooking(
     userId: teacher.userId,
   })
 
+  // Maile idą po odpowiedzi: uczeń ma zobaczyć potwierdzenie od razu, a nie
+  // czekać, aż dostawca poczty odbierze dwa żądania.
+  after(async () => {
+    const common = {
+      reference: booking.reference,
+      dayLabel: formatLongDate(startsAt),
+      timeLabel: formatTime(startsAt),
+      teacherName: personName(teacher.user),
+      subjectName: subject?.name ?? null,
+      siteName: settings.siteName,
+    }
+
+    // Zalogowany uczeń ma adres na koncie; gość podał go (albo nie) w formularzu.
+    const studentEmail = data.email ?? (await studentEmailFor(studentId))
+    if (studentEmail) {
+      await sendEmail({
+        to: studentEmail,
+        ...bookingReceivedMail({ ...common, studentName: data.name }),
+      })
+    }
+
+    const teacherEmail = await teacherEmailFor(teacher.userId)
+    if (teacherEmail) {
+      await sendEmail({
+        to: teacherEmail,
+        ...bookingForTeacherMail({
+          ...common,
+          studentName: data.name,
+          phone: data.phone,
+          note: data.note,
+        }),
+      })
+    }
+  })
+
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/rezerwacje")
   revalidatePath("/dashboard/kalendarz")
@@ -266,12 +332,15 @@ const cancelSchema = z.object({
 })
 
 export type CancelBookingResult =
-  | { ok: true }
-  | { ok: false; errors: v.FieldErrors; message?: string }
+  { ok: true } | { ok: false; errors: v.FieldErrors; message?: string }
 
 /**
  * Odwołanie przez ucznia. Kod rezerwacji jest kluczem dostępu — kto go zna,
  * ten zgłaszał albo dostał go od zgłaszającego.
+ *
+ * Dlatego ta akcja, jako jedyna publiczna, potrafi **zmienić cudzy** rekord
+ * na podstawie samego kodu. Limit z adresu jest tu obowiązkowy: bez niego
+ * zgadywanie kodów byłoby zdalnym kasowaniem lekcji z grafiku.
  */
 export async function cancelOwnBooking(input: {
   reference: string
@@ -280,6 +349,13 @@ export async function cancelOwnBooking(input: {
   const parsed = cancelSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, errors: v.fieldErrors(parsed.error) }
+  }
+
+  const ip = await clientIp()
+  if (tooManyFromAddress(ip, "cancel", { limit: 10, windowMs: 600_000 })) {
+    return v.failWith(
+      "Za dużo prób z tego miejsca. Odczekaj chwilę albo zadzwoń do nas."
+    )
   }
 
   const booking = await prisma.booking.findUnique({
@@ -295,7 +371,9 @@ export async function cancelOwnBooking(input: {
     return v.failWith("Nie znaleźliśmy rezerwacji o tym kodzie.")
   }
 
-  if (["CANCELLED", "REJECTED", "COMPLETED", "NO_SHOW"].includes(booking.status)) {
+  if (
+    ["CANCELLED", "REJECTED", "COMPLETED", "NO_SHOW"].includes(booking.status)
+  ) {
     return v.failWith("Tej rezerwacji nie da się już odwołać.")
   }
 
@@ -304,9 +382,7 @@ export async function cancelOwnBooking(input: {
     booking.teacherProfile.minLeadHours,
     settings.bookingMinLeadHours
   )
-  const deadline = new Date(
-    booking.startsAt.getTime() - leadHours * 3_600_000
-  )
+  const deadline = new Date(booking.startsAt.getTime() - leadHours * 3_600_000)
   if (new Date() > deadline) {
     return v.failWith(
       `Odwołanie przez stronę działa do ${leadHours} h przed lekcją. Zadzwoń albo napisz — dogadamy to bezpośrednio.`
@@ -335,4 +411,21 @@ export async function cancelOwnBooking(input: {
   revalidatePath("/dashboard/kalendarz")
 
   return { ok: true }
+}
+
+async function studentEmailFor(studentId: string | null) {
+  if (!studentId) return null
+  const student = await prisma.user.findUnique({
+    where: { id: studentId },
+    select: { email: true },
+  })
+  return student?.email ?? null
+}
+
+async function teacherEmailFor(userId: string) {
+  const teacher = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  })
+  return teacher?.email ?? null
 }

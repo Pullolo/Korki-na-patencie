@@ -33,6 +33,15 @@ export function BookingDetailActions({
 
   return (
     <div className="space-y-3">
+      {/* Zgłoszenie, które przeleżało swój termin. Potwierdzenie go niczego
+          już nie umawia — lepiej odrzucić i umówić nowy termin, niż zostawić
+          w grafiku lekcję, której nikt nie poprowadził. */}
+      {status === "PENDING" && isPast && (
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          Termin tej lekcji już minął. Potwierdzenie nie umówi jej wstecz —
+          zwykle lepiej odrzucić zgłoszenie i zaproponować nową godzinę.
+        </p>
+      )}
       {needsReason && (
         <input
           type="text"

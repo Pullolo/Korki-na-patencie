@@ -94,31 +94,3 @@ export async function getBookingByReference(
     ),
   }
 }
-
-/** Lekcje zalogowanego ucznia — do `/konto`. */
-export async function listMyBookings(userId: string) {
-  return prisma.booking.findMany({
-    where: { studentId: userId },
-    orderBy: { startsAt: "desc" },
-    select: {
-      id: true,
-      reference: true,
-      status: true,
-      startsAt: true,
-      endsAt: true,
-      price: true,
-      mode: true,
-      teacherProfile: {
-        select: {
-          slug: true,
-          minLeadHours: true,
-          user: { select: { firstName: true, lastName: true } },
-        },
-      },
-      subject: { select: { name: true, slug: true } },
-      level: { select: { name: true } },
-      location: { select: { name: true, type: true, city: true } },
-      review: { select: { id: true, status: true } },
-    },
-  })
-}

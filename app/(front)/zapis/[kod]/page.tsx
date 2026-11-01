@@ -9,6 +9,7 @@ import { btnSecondary, cardBase } from "@/components/front/styles"
 import { formatPrice, plural, WEEKDAYS } from "@/lib/format"
 import type { EnrollmentStatus } from "@/lib/generated/prisma/enums"
 import { LOCATION_TYPE_LABELS } from "@/lib/labels"
+import { tooManyCodeLookups } from "@/lib/actions/public/guard"
 import { getEnrollmentByReference } from "@/lib/public/groups"
 import { getSiteSettings } from "@/lib/public/settings"
 import { cn } from "@/lib/utils"
@@ -33,6 +34,8 @@ export default async function EnrollmentStatusPage({
   params: Promise<{ kod: string }>
 }) {
   const { kod } = await params
+  if (await tooManyCodeLookups("enrollment")) notFound()
+
   const enrollment = await getEnrollmentByReference(kod)
   if (!enrollment) notFound()
 

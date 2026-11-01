@@ -22,6 +22,16 @@ export async function getDashboardStats(ctx: DashboardContext) {
   const prevMonthStart = startOfMonth(subMonths(now, 1))
   const chartStart = startOfMonth(subMonths(now, 5))
 
+  /**
+   * Poprzedni miesiąc obcinamy do tego samego punktu, w którym jesteśmy teraz.
+   *
+   * Pełny sierpień kontra dziewięć dni września to nie jest porównanie —
+   * dziewiątego dnia miesiąca kafel pokazywał „−100%" i wyglądał jak zapaść,
+   * choć nie wydarzyło się nic poza tym, że miesiąc dopiero się zaczął.
+   */
+  const elapsed = now.getTime() - thisMonthStart.getTime()
+  const prevMonthSameMoment = new Date(prevMonthStart.getTime() + elapsed)
+
   const [
     lessonsThisMonth,
     lessonsPrevMonth,
@@ -45,7 +55,7 @@ export async function getDashboardStats(ctx: DashboardContext) {
       where: {
         ...scope,
         status: { in: COUNTED },
-        startsAt: { gte: prevMonthStart, lt: thisMonthStart },
+        startsAt: { gte: prevMonthStart, lt: prevMonthSameMoment },
       },
     }),
     prisma.booking.count({ where: { ...scope, status: "PENDING" } }),
@@ -62,7 +72,7 @@ export async function getDashboardStats(ctx: DashboardContext) {
       where: {
         ...scope,
         status: { in: COUNTED },
-        startsAt: { gte: prevMonthStart, lt: thisMonthStart },
+        startsAt: { gte: prevMonthStart, lt: prevMonthSameMoment },
       },
     }),
     // Grupowanie po stronie bazy; uczeń-gość nie ma studentId, więc rozróżniamy go po e-mailu.

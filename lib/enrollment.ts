@@ -75,7 +75,9 @@ export async function enrollStudent(
   }
 
   if (!input.studentId && !input.guestName?.trim()) {
-    throw new EnrollmentError("Wskaż ucznia z konta albo podaj imię i nazwisko.")
+    throw new EnrollmentError(
+      "Wskaż ucznia z konta albo podaj imię i nazwisko."
+    )
   }
 
   if (input.studentId) {
@@ -92,9 +94,16 @@ export async function enrollStudent(
   const monthlyPrice = applyDiscount(group.pricePerMonth, discountPercent)
   const reference = await uniqueEnrollmentReference()
 
-  // Liczbę miejsc sprawdzamy w tej samej transakcji, w której zapisujemy —
-  // inaczej dwa równoczesne zgłoszenia zmieściłyby się w ostatnim wolnym.
+  // Liczbę miejsc sprawdzamy w tej samej transakcji, w której zapisujemy.
+  //
+  // Sama transakcja to za mało: na domyślnym poziomie izolacji (READ COMMITTED)
+  // dwa równoległe zapisy policzą miejsca **przed** wstawieniem tego drugiego
+  // i oba zmieszczą się w ostatnim wolnym. Blokada doradcza na identyfikatorze
+  // grupy ustawia je w kolejkę, więc drugi liczy już po pierwszym i trafia
+  // na listę rezerwową, tak jak powinien.
   const created = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(2, hashtext(${groupId}))`
+
     const taken = await tx.groupEnrollment.count({
       where: { groupId, status: "ACTIVE" },
     })

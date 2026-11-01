@@ -4,7 +4,7 @@ import { teacherScope, type DashboardContext } from "@/lib/auth"
 import { monthKey, monthLabel } from "@/lib/dates"
 import type { BookingStatus, LocationType } from "@/lib/generated/prisma/enums"
 import { prisma } from "@/lib/prisma"
-import { getAvailabilityPreview } from "@/lib/queries/availability"
+import { countFreeSlots } from "@/lib/queries/availability"
 
 const COUNTED: BookingStatus[] = ["CONFIRMED", "COMPLETED"]
 const OCCUPANCY_DAYS = 28
@@ -136,15 +136,8 @@ export async function getStatistics(ctx: DashboardContext) {
       : []
 
   const horizon = new Date(now.getTime() + OCCUPANCY_DAYS * 86_400_000)
-  const [freeSlotCounts, upcomingBooked] = await Promise.all([
-    Promise.all(
-      teacherIds.map(async (id) => {
-        const days = await getAvailabilityPreview(id, OCCUPANCY_DAYS).catch(
-          () => []
-        )
-        return days.reduce((sum, day) => sum + day.slots.length, 0)
-      })
-    ),
+  const [freeSlots, upcomingBooked] = await Promise.all([
+    countFreeSlots(teacherIds, OCCUPANCY_DAYS).catch(() => 0),
     prisma.booking.count({
       where: {
         ...scope,
@@ -154,7 +147,6 @@ export async function getStatistics(ctx: DashboardContext) {
     }),
   ])
 
-  const freeSlots = freeSlotCounts.reduce((sum, count) => sum + count, 0)
   const capacity = freeSlots + upcomingBooked
   const occupancy =
     capacity === 0 ? 0 : Math.round((upcomingBooked / capacity) * 100)

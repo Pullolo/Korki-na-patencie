@@ -1,10 +1,10 @@
 "use server"
 
-import { currentUser } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 import { notify } from "@/lib/notifications"
+import { getClerkUser } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import * as v from "@/lib/validation"
 
@@ -39,8 +39,7 @@ const schema = z.object({
 export type SubmitReviewInput = z.input<typeof schema>
 
 export type SubmitReviewResult =
-  | { ok: true }
-  | { ok: false; errors: v.FieldErrors; message?: string }
+  { ok: true } | { ok: false; errors: v.FieldErrors; message?: string }
 
 export async function submitReview(
   input: SubmitReviewInput
@@ -51,7 +50,7 @@ export async function submitReview(
   }
   const data = parsed.data
 
-  const clerkUser = await currentUser()
+  const clerkUser = await getClerkUser()
   if (!clerkUser) {
     return v.failWith("Zaloguj się, żeby wystawić opinię.")
   }

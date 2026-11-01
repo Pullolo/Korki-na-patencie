@@ -59,12 +59,6 @@ export const message = z
   .min(10, "Napisz choć zdanie — inaczej trudno nam pomóc.")
   .max(2000, "Wiadomość może mieć najwyżej 2000 znaków.")
 
-export const shortNote = z
-  .string()
-  .trim()
-  .max(500, "Notatka może mieć najwyżej 500 znaków.")
-  .transform((value) => value || null)
-
 /** Zgoda na przetwarzanie danych — pole wymagane przy każdym formularzu. */
 export const consent = z
   .boolean()
@@ -98,18 +92,6 @@ export const optionalId = z
   .max(40)
   .transform((value) => value || null)
 
-/** Data jako ściana zegara: "2026-08-27". Bez stref — te psują początek dnia. */
-export const dayString = z
-  .string()
-  .trim()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Nieprawidłowa data.")
-
-/** Godzina jako ściana zegara: "17:00". */
-export const timeString = z
-  .string()
-  .trim()
-  .regex(/^\d{2}:\d{2}$/, "Nieprawidłowa godzina.")
-
 /** Kod rezerwacji albo zapisu, np. „KOR-7H3D". Wielkość liter bez znaczenia. */
 export const referenceCode = z
   .string()
@@ -117,16 +99,13 @@ export const referenceCode = z
   .toUpperCase()
   .regex(/^[A-Z]{3}-[A-Z0-9]{4,8}$/, "Nieprawidłowy kod.")
 
-export type FieldErrors = Record<string, string>
-
 /**
- * Wynik akcji publicznej. Nie rzucamy wyjątkiem: panelowy `useServerAction()`
- * pokazuje jeden komunikat na całą operację, a formularz na stronie musi umieć
- * podświetlić konkretne pole.
+ * Akcja publiczna nie rzuca wyjątkiem: panelowy `useServerAction()` pokazuje
+ * jeden komunikat na całą operację, a formularz na stronie musi umieć
+ * podświetlić konkretne pole. Każda akcja deklaruje własny typ wyniku —
+ * różnią się tym, co zwracają po sukcesie (kod, rabat, lista alternatyw).
  */
-export type ActionResult<T> =
-  | ({ ok: true } & T)
-  | { ok: false; errors: FieldErrors; message?: string }
+export type FieldErrors = Record<string, string>
 
 /** Pierwszy błąd na pole — formularz i tak pokazuje po jednym pod polem. */
 export function fieldErrors(error: z.ZodError): FieldErrors {
@@ -145,11 +124,4 @@ export function fail(errors: FieldErrors, message?: string) {
 /** Błąd niezwiązany z żadnym polem — ląduje nad przyciskiem wysyłki. */
 export function failWith(message: string) {
   return { ok: false as const, errors: { _: message }, message }
-}
-
-/** Wspólny początek każdej akcji publicznej: parsuj albo wróć z błędami pól. */
-export function parseInput<S extends z.ZodType>(schema: S, input: unknown) {
-  const parsed = schema.safeParse(input)
-  if (parsed.success) return { ok: true as const, data: parsed.data as z.infer<S> }
-  return { ok: false as const, errors: fieldErrors(parsed.error) }
 }

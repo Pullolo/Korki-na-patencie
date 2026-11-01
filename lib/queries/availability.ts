@@ -118,3 +118,118 @@ export async function getTeacherOptions() {
     },
   })
 }
+
+/**
+ * Liczba wolnych okienek dla wielu nauczycieli naraz — do obłożenia w
+ * statystykach. Wersja w pętli wołała `getAvailabilityPreview()` per osoba,
+ * czyli dwa zapytania na nauczyciela; tutaj idzie jedno zapytanie na typ
+ * danych, dokładnie jak w publicznym `getSlotBoard()`.
+ */
+export async function countFreeSlots(
+  teacherProfileIds: string[],
+  days = 14
+): Promise<number> {
+  if (teacherProfileIds.length === 0) return 0
+
+  const from = new Date()
+  const until = new Date(from.getTime() + days * 86_400_000)
+
+  const [profiles, rules, exceptions, busy, groups] = await Promise.all([
+    prisma.teacherProfile.findMany({
+      where: { id: { in: teacherProfileIds } },
+      select: {
+        id: true,
+        slotMinutes: true,
+        bufferMinutes: true,
+        minLeadHours: true,
+        maxAdvanceDays: true,
+      },
+    }),
+    prisma.availabilityRule.findMany({
+      where: { teacherProfileId: { in: teacherProfileIds } },
+      select: {
+        teacherProfileId: true,
+        weekday: true,
+        startMin: true,
+        endMin: true,
+        locationId: true,
+        validFrom: true,
+        validTo: true,
+        isActive: true,
+      },
+    }),
+    prisma.availabilityException.findMany({
+      where: {
+        teacherProfileId: { in: teacherProfileIds },
+        date: { gte: from, lt: until },
+      },
+      select: {
+        teacherProfileId: true,
+        date: true,
+        type: true,
+        startMin: true,
+        endMin: true,
+        locationId: true,
+      },
+    }),
+    prisma.booking.findMany({
+      where: {
+        teacherProfileId: { in: teacherProfileIds },
+        status: { in: [...BUSY_STATUSES] },
+        startsAt: { lt: until },
+        endsAt: { gt: from },
+      },
+      select: { teacherProfileId: true, startsAt: true, endsAt: true },
+    }),
+    prisma.courseGroup.findMany({
+      where: { teacherProfileId: { in: teacherProfileIds }, isActive: true },
+      select: {
+        teacherProfileId: true,
+        weekday: true,
+        startMin: true,
+        meetingMinutes: true,
+        startsOn: true,
+        endsOn: true,
+        isActive: true,
+      },
+    }),
+  ])
+
+  function group<T extends { teacherProfileId: string }>(rows: T[]) {
+    const map = new Map<string, T[]>()
+    for (const row of rows) {
+      const list = map.get(row.teacherProfileId)
+      if (list) list.push(row)
+      else map.set(row.teacherProfileId, [row])
+    }
+    return map
+  }
+
+  const rulesBy = group(rules)
+  const exceptionsBy = group(exceptions)
+  const busyBy = group(busy)
+  const groupsBy = group(groups)
+
+  let total = 0
+  for (const profile of profiles) {
+    const days_ = computeAvailability({
+      from,
+      days,
+      rules: rulesBy.get(profile.id) ?? [],
+      exceptions: exceptionsBy.get(profile.id) ?? [],
+      busy: [
+        ...(busyBy.get(profile.id) ?? []),
+        ...groupMeetingsInRange(groupsBy.get(profile.id) ?? [], from, days),
+      ],
+      settings: {
+        slotMinutes: profile.slotMinutes,
+        bufferMinutes: profile.bufferMinutes,
+        minLeadHours: profile.minLeadHours,
+        maxAdvanceDays: profile.maxAdvanceDays,
+      },
+    })
+    for (const day of days_) total += day.slots.length
+  }
+
+  return total
+}

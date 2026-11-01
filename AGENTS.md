@@ -19,10 +19,18 @@ danych: `docs/PLAN.md`.
   a admin może go sobie nadać (albo nie) przez `setTeacherProfile()` w
   `/dashboard/uzytkownicy`. Pytaj więc o `ctx.teacherProfileId`, nie o rolę,
   kiedy chodzi o „czy ta osoba prowadzi zajęcia".
-- Autoryzacja: `proxy.ts` robi tylko optymistyczny redirect. Prawdziwą bramką są
-  `ensureDashboardPage()` / `ensureAdminPage()` z `lib/auth.ts` w RSC oraz
-  `requireDashboardUser()` / `requireAdmin()` / `requireTeacherAccess()` w każdej
-  server action. Nigdy nie polegaj wyłącznie na proxy.
+- Autoryzacja: `proxy.ts` robi tylko optymistyczny redirect — sprawdza samą
+  obecność sesji dla `/dashboard` i `/konto`, żeby nie renderować RSC dla
+  niezalogowanego. Prawdziwą bramką są `ensureDashboardPage()` /
+  `ensureAdminPage()` / `ensureAccountPage()` z `lib/auth.ts` w RSC oraz
+  `requireDashboardUser()` / `requireAdmin()` / `requireTeacherAccess()` /
+  `requireAccountUser()` w każdej server action. Nigdy nie polegaj wyłącznie
+  na proxy — dopasowanie po ścieżce potrafi się rozjechać z routingiem Nexta
+  (dlatego Clerk wycofał `createRouteMatcher()`).
+- O tożsamość pytaj przez `getClerkUser()` z `lib/auth.ts`, nigdy przez
+  `currentUser()` wprost. Każde `currentUser()` to osobne wyjście do API Clerka;
+  jedna strona panelu pyta trzy razy (root layout, layout panelu, strona),
+  więc bez memoizacji `cache()` płacimy trzy round-tripy na render.
 - Zapytania nauczyciela zawężaj przez `teacherScope(ctx)` — admin widzi wszystko,
   nauczyciel tylko własny profil.
 - Godziny dostępności trzymamy jako minuty od północy (`startMin`, `endMin`),
@@ -35,9 +43,25 @@ danych: `docs/PLAN.md`.
   indywidualnych nalicza `enrollInGroup()` i zapisuje jako migawkę w `GroupEnrollment`.
 - Lokalizacje należą do nauczyciela (`Location.teacherProfileId`), nie ma wspólnego słownika.
 - Klucze miesięcy buduj z lokalnych składowych daty, nie przez `toISOString()` — offset strefy
-  przenosi początek miesiąca do poprzedniego.
+  przenosi początek miesiąca do poprzedniego. Kolumny `@db.Date` (`AvailabilityException.date`,
+  `CourseGroup.startsOn`/`endsOn`) zapisuj **wyłącznie** przez `toDateOnly()` i czytaj przez
+  `dateOnlyKey()` — wpisana tam lokalna północ przesuwa wyjątek o dzień i nikt tego nie zauważy.
+- Kod rezerwacji i zapisu (`lib/reference.ts`) jest **kluczem dostępu**, nie ozdobnikiem:
+  otwiera cudze zgłoszenie i pozwala je odwołać. Losuj go z `randomBytes`, nie skracaj poniżej
+  ośmiu znaków i nie rób drugiego generatora obok tego jednego.
+- Termin sprawdzany i zapisywany musi być jedną transakcją z blokadą
+  `pg_advisory_xact_lock` — „sprawdź, potem zapisz" przepuszcza dwóch uczniów
+  na tę samą godzinę (tak samo w `enrollStudent()` dla ostatniego miejsca w grupie).
+- Maile transakcyjne idą przez `lib/email.ts` w `after()` — nigdy w ścieżce
+  odpowiedzi i nigdy tak, żeby błąd poczty wywrócił zapisaną już rezerwację.
+  Bez `RESEND_API_KEY` warstwa jest bezgłośna i nic nie psuje.
 - Zmienne środowiskowe są w `.env.local` (wzór: `.env.example`).
   Prisma czyta je przez `prisma.config.ts`.
+- **Gdy `pnpm dev` zaczyna mielić po kilkanaście sekund na stronę**, winny jest
+  zwykle trwały cache Turbopacka w `.next/dev/cache` — potrafi urosnąć do
+  kilku GB i wtedy sam start zajmuje 4 s zamiast 1 s, a na Windowsie dokłada
+  się do tego skaner antywirusowy. `pnpm clean` kasuje `.next`; pierwsze wejście
+  po czyszczeniu jest wolniejsze (kompilacja), każde następne szybsze.
 - Komponenty `ui/` to shadcn na Base UI — podmiana elementu idzie przez
   `render={<Link />}`, nie przez `asChild`.
 - Formularze i akcje w panelu chodzą przez `useServerAction()` (`hooks/use-server-action.ts`)

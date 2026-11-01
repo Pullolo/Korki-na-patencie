@@ -16,13 +16,30 @@ import { prisma } from "@/lib/prisma"
  * limitu w pamięci procesu (`docs/FRONTEND.md`, sekcja 6, „Dane osobowe").
  */
 
-const SECRET =
-  process.env.FORM_SECRET ??
-  process.env.CLERK_SECRET_KEY ??
-  "korki-dev-secret"
+/**
+ * Klucz do podpisywania znaczników formularza.
+ *
+ * `CLERK_SECRET_KEY` jest awaryjnym źródłem, ale nigdy nie używamy go wprost:
+ * jeden sekret w dwóch rolach oznacza, że wyciek podpisu z formularza jest
+ * podpowiedzią o kluczu do API Clerka. Domieszka etykiety rozdziela te role.
+ *
+ * Na produkcji bez któregokolwiek z tych dwóch nie podpisujemy nic — cicha
+ * praca na stałej z kodu znaczyłaby, że każdy potrafi sfałszować znacznik.
+ */
+function secret() {
+  const raw = process.env.FORM_SECRET ?? process.env.CLERK_SECRET_KEY
+  if (raw) return createHmac("sha256", raw).update("korki:form-stamp").digest()
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Brak FORM_SECRET (ani CLERK_SECRET_KEY) — formularzy publicznych nie da się bezpiecznie podpisać."
+    )
+  }
+  return Buffer.from("korki-dev-secret")
+}
 
 function sign(value: string) {
-  return createHmac("sha256", SECRET).update(value).digest("base64url")
+  return createHmac("sha256", secret()).update(value).digest("base64url")
 }
 
 /**
@@ -67,6 +84,13 @@ export async function clientIp() {
 /**
  * Licznik w pamięci procesu. Przy jednej instancji wystarcza, przy wielu jest
  * przybliżeniem — dlatego drugą, twardą granicą jest licznik w bazie niżej.
+ *
+ * **Uwaga przy wdrożeniu bezserwerowym** (Vercel i podobne): każda instancja
+ * ma własną mapę, więc realny limit to `limit × liczba instancji`. Dla
+ * formularzy to bez znaczenia — twardą granicę trzyma licznik w bazie. Dla
+ * `tooManyCodeLookups()` i licznika odsłon nie ma takiego dublera, więc gdy
+ * serwis ruszy na wielu instancjach, ten licznik trzeba przenieść do
+ * wspólnego magazynu (Redis / Vercel KV). Do czasu jednej instancji wystarcza.
  */
 const hits = new Map<string, number[]>()
 
@@ -95,7 +119,10 @@ export function tooManyFromAddress(
 const HOUR_MS = 3_600_000
 
 /** Ile zgłoszeń rezerwacji poszło z tego kontaktu w ostatniej godzinie. */
-export async function recentBookingCount(email: string | null, phone: string | null) {
+export async function recentBookingCount(
+  email: string | null,
+  phone: string | null
+) {
   if (!email && !phone) return 0
   return prisma.booking.count({
     where: {
@@ -114,7 +141,10 @@ export async function recentInquiryCount(email: string) {
   })
 }
 
-export async function recentEnrollmentCount(email: string | null, phone: string | null) {
+export async function recentEnrollmentCount(
+  email: string | null,
+  phone: string | null
+) {
   if (!email && !phone) return 0
   return prisma.groupEnrollment.count({
     where: {
@@ -124,5 +154,22 @@ export async function recentEnrollmentCount(email: string | null, phone: string 
         ...(phone ? [{ guestPhone: phone }] : []),
       ],
     },
+  })
+}
+
+/**
+ * Limit prób odczytania cudzego zgłoszenia po kodzie.
+ *
+ * Kod jest kluczem dostępu, więc strony `/rezerwacja/[kod]` i `/zapis/[kod]`
+ * to jedyne miejsca, gdzie nieznajomy może zgadywać. Sam kod jest już na tyle
+ * długi, że zgadywanie nie ma sensu (`lib/reference.ts`), ale licznik
+ * odbiera skanerowi nawet tę próbę — i robi to na tyle wysoko ustawiony,
+ * żeby uczeń odświeżający swoją stronę nigdy go nie dotknął.
+ */
+export async function tooManyCodeLookups(action: "booking" | "enrollment") {
+  const ip = await clientIp()
+  return tooManyFromAddress(ip, `lookup:${action}`, {
+    limit: 30,
+    windowMs: 600_000,
   })
 }
