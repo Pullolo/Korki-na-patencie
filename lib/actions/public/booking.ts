@@ -110,6 +110,7 @@ export async function requestBooking(
       id: true,
       userId: true,
       slotMinutes: true,
+      payoutPerHour: true,
       user: { select: { firstName: true, lastName: true } },
     },
   })
@@ -242,6 +243,12 @@ export async function requestBooking(
         startsAt,
         endsAt,
         price: hourly === null ? null : lessonPrice(hourly, slot.minutes),
+        // Migawka części nauczyciela — liczona z jego stawki tak samo jak cena
+        // z cennika, żeby rozliczenie nie zależało od późniejszych zmian.
+        teacherPayout:
+          teacher.payoutPerHour == null
+            ? null
+            : lessonPrice(teacher.payoutPerHour, slot.minutes),
         status: settings.bookingAutoConfirm ? "CONFIRMED" : "PENDING",
         confirmedAt: settings.bookingAutoConfirm ? new Date() : null,
         studentNote: data.note,

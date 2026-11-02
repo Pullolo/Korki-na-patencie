@@ -34,6 +34,13 @@ enum BookingStatus {
   NO_SHOW
 }
 
+/// Jak uczeń zapłacił za lekcję. Wpisywane ręcznie przez nauczyciela —
+/// bramki płatności nie ma, więc to jedyne źródło tej informacji.
+enum PaymentMethod {
+  ONLINE
+  CASH
+}
+
 /// BLOCK — nauczyciel niedostępny mimo reguły tygodniowej.
 /// EXTRA — jednorazowe dodatkowe okienko poza siatką tygodnia.
 enum ExceptionType {
@@ -123,6 +130,10 @@ model TeacherProfile {
   slotMinutes         Int      @default(60)
   /// Przerwa doliczana po lekcji przy wyliczaniu wolnych terminów.
   bufferMinutes       Int      @default(0)
+  /// Ile z ceny lekcji należy się nauczycielowi — stawka za godzinę.
+  /// Różnica wobec `PriceRule` to marża serwisu. Ustawia ją wyłącznie admin,
+  /// bo decyduje o podziale pieniędzy, a nie o ofercie.
+  payoutPerHour       Float?
   /// Minimalne wyprzedzenie rezerwacji (godziny).
   minLeadHours        Int      @default(12)
   /// Jak daleko w przyszłość można rezerwować (dni).
@@ -411,6 +422,13 @@ model Booking {
   startsAt         DateTime
   endsAt           DateTime
   price            Float?
+  /// Część ceny należna nauczycielowi — migawka z chwili zapisu, tak jak
+  /// `price`. Podniesienie stawki nie przelicza rozliczonych lekcji wstecz.
+  teacherPayout    Float?
+  /// Czy część nauczyciela została mu już wypłacona.
+  paidOut          Boolean       @default(false)
+  /// Jak zapłacił uczeń; null = jeszcze nie wiadomo.
+  paymentMethod    PaymentMethod?
   status           BookingStatus @default(PENDING)
   studentNote      String?
   internalNote     String?

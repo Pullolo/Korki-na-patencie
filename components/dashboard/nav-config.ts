@@ -8,6 +8,7 @@ import {
   ClipboardList,
   FileText,
   GraduationCap,
+  HandCoins,
   HelpCircle,
   Layers,
   LayoutDashboard,
@@ -52,6 +53,13 @@ export const NAVIGATION: NavGroup[] = [
         name: "Statystyki",
         href: "/dashboard/statystyki",
         icon: ChartNoAxesCombined,
+      },
+      // Nauczyciel widzi rozliczenie własnych lekcji, admin wszystkich —
+      // dlatego bez `adminOnly`.
+      {
+        name: "Rozliczenia",
+        href: "/dashboard/rozliczenia",
+        icon: HandCoins,
       },
       {
         name: "Ruch na stronie",

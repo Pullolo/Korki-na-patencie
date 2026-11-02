@@ -3,6 +3,7 @@ import type {
   InquiryStatus,
   LocationType,
   PageStatus,
+  PaymentMethod,
   ReviewStatus,
   UserRole,
 } from "@/lib/generated/prisma/enums"
@@ -45,6 +46,16 @@ export const LOCATION_TYPE_LABELS: Record<LocationType, string> = {
   ONLINE: "Online",
   TEACHER_PLACE: "U nauczyciela",
   STUDENT_PLACE: "U ucznia",
+}
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  ONLINE: "Online",
+  CASH: "Gotówka",
+}
+
+export const PAYMENT_METHOD_TONES: Record<PaymentMethod, BadgeTone> = {
+  ONLINE: "blue",
+  CASH: "amber",
 }
 
 export const INQUIRY_STATUS_LABELS: Record<InquiryStatus, string> = {

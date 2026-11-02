@@ -5,9 +5,9 @@ import { revalidatePath } from "next/cache"
 import { requireTeacherAccess } from "@/lib/auth"
 import { conflictMessage, findScheduleConflicts } from "@/lib/conflicts"
 import { formatDate } from "@/lib/format"
-import type { LocationType } from "@/lib/generated/prisma/enums"
+import type { LocationType, PaymentMethod } from "@/lib/generated/prisma/enums"
 import { notify } from "@/lib/notifications"
-import { resolveHourlyPrice } from "@/lib/pricing"
+import { lessonPrice, resolveHourlyPrice } from "@/lib/pricing"
 import { prisma } from "@/lib/prisma"
 import { splitName, uniqueBookingReferences } from "@/lib/reference"
 
@@ -17,6 +17,12 @@ import { splitName, uniqueBookingReferences } from "@/lib/reference"
  * `minLeadHours` ani `maxAdvanceDays`: to reguły dla ucznia rezerwującego sam,
  * a nie dla nauczyciela wpisującego własną umowę. Kolizja terminu obowiązuje
  * dalej, ale da się ją świadomie pominąć (`allowOverlap`).
+ *
+ * Ta sama funkcja zapisuje lekcje wpisywane **wstecz**, w rozliczeniach
+ * (`completed`). Nie ma dla nich osobnej akcji celowo: migawki ceny i części
+ * nauczyciela, szukanie ucznia po mailu i telefonie oraz losowanie kodu dostępu
+ * muszą działać identycznie, a dwie ścieżki zapisu rozeszłyby się przy
+ * pierwszej zmianie cennika.
  */
 
 export type CreateBookingInput = {
@@ -46,6 +52,23 @@ export type CreateBookingInput = {
    * Cykl na stałe (z miesięcznym rozliczeniem) to `CourseGroup`, nie to.
    */
   repeatWeeks: number
+
+  /**
+   * Lekcja, która już się odbyła — wpisywana wstecz, np. przepisywana
+   * z arkusza. Dostaje od razu status `COMPLETED`, musi mieć termin
+   * w przeszłości i **wolno jej kolidować z grafikiem**: stwierdzamy fakt,
+   * a nie rezerwujemy termin, więc blokowanie na kolizji byłoby tylko
+   * przeszkodą przy nadrabianiu zaległego miesiąca.
+   */
+  completed?: boolean
+  /**
+   * Pola rozliczeniowe — wypełnia je formularz w Rozliczeniach. Puste
+   * `teacherPayout` znaczy „policz ze stawki nauczyciela", tak samo jak
+   * puste `price` znaczy „policz z cennika".
+   */
+  teacherPayout?: number | null
+  paymentMethod?: PaymentMethod | null
+  paidOut?: boolean
 }
 
 function clean(value: string | null | undefined) {
@@ -141,6 +164,13 @@ export async function createBooking(input: CreateBookingInput) {
   if (input.price !== null && (input.price < 0 || input.price > 100_000)) {
     throw new Error("Cena musi mieścić się między 0 a 100 000.")
   }
+  const payoutOverride = input.teacherPayout ?? null
+  if (
+    payoutOverride !== null &&
+    (payoutOverride < 0 || payoutOverride > 100_000)
+  ) {
+    throw new Error("Część nauczyciela musi mieścić się między 0 a 100 000.")
+  }
 
   const repeatWeeks = Math.round(input.repeatWeeks || 1)
   if (repeatWeeks < 1 || repeatWeeks > 52) {
@@ -167,7 +197,21 @@ export async function createBooking(input: CreateBookingInput) {
     }
   }
 
-  if (!input.allowOverlap) {
+  // Ta sama reguła co przy „Rozlicz" w `lib/actions/bookings.ts`: lekcji,
+  // która się jeszcze nie zaczęła, nie da się uznać za odbytą. Serię
+  // sprawdzamy po ostatnim terminie, bo terminy idą rosnąco.
+  if (input.completed) {
+    const last = terms[terms.length - 1].startsAt
+    if (last > new Date()) {
+      throw new Error(
+        terms.length === 1
+          ? "Ta lekcja jeszcze się nie zaczęła — jako odbytą można wpisać tylko termin z przeszłości."
+          : "Ostatnia lekcja serii wypada w przyszłości — jako odbyte można wpisać tylko terminy z przeszłości."
+      )
+    }
+  }
+
+  if (!input.completed && !input.allowOverlap) {
     // Serię sprawdzamy w całości i odmawiamy jej w całości — lepiej pokazać
     // wszystkie zajęte tygodnie naraz, niż zapisać połowę i zostawić dziury.
     const collisions: string[] = []
@@ -180,7 +224,9 @@ export async function createBooking(input: CreateBookingInput) {
       if (conflicts.length === 0) continue
       if (terms.length === 1) throw new Error(conflictMessage(conflicts))
       collisions.push(
-        `${formatDate(term.startsAt)} — ${conflictMessage(conflicts).replace(/^Termin koliduje z: /, "").replace(/\.$/, "")}`
+        `${formatDate(term.startsAt)} — ${conflictMessage(conflicts)
+          .replace(/^Termin koliduje z: /, "")
+          .replace(/\.$/, "")}`
       )
     }
     if (collisions.length > 0) {
@@ -193,8 +239,19 @@ export async function createBooking(input: CreateBookingInput) {
   const { studentId, created } = await resolveStudentId(input)
   const price = await resolvePrice(input, durationMin)
 
+  // Profil czytamy raz: stawka wchodzi do migawki rozliczenia, a `userId`
+  // rozstrzyga potem, czy nauczyciela trzeba powiadomić o cudzym wpisie.
+  const teacher = await prisma.teacherProfile.findUnique({
+    where: { id: input.teacherProfileId },
+    select: { userId: true, payoutPerHour: true },
+  })
+  const teacherPayout =
+    payoutOverride ??
+    (teacher?.payoutPerHour == null
+      ? null
+      : lessonPrice(teacher.payoutPerHour, durationMin))
+
   const references = await uniqueBookingReferences(terms.length)
-  const confirmedAt = input.confirmed ? new Date() : null
 
   // Jedna transakcja: albo wchodzi cała seria, albo nic. Inaczej nieudany
   // ósmy tydzień zostawiłby siedem lekcji, o których nikt nie wie.
@@ -212,8 +269,21 @@ export async function createBooking(input: CreateBookingInput) {
           startsAt: term.startsAt,
           endsAt: term.endsAt,
           price,
-          status: input.confirmed ? "CONFIRMED" : "PENDING",
-          confirmedAt,
+          teacherPayout,
+          paymentMethod: input.paymentMethod ?? null,
+          paidOut: input.paidOut ?? false,
+          status: input.completed
+            ? "COMPLETED"
+            : input.confirmed
+              ? "CONFIRMED"
+              : "PENDING",
+          // Lekcja wpisana wstecz była umówiona najpóźniej w chwili, w której
+          // się zaczęła — data zapisu sugerowałaby potwierdzenie już po niej.
+          confirmedAt: input.completed
+            ? term.startsAt
+            : input.confirmed
+              ? new Date()
+              : null,
           internalNote: clean(input.note),
         },
         select: { id: true, reference: true },
@@ -223,12 +293,10 @@ export async function createBooking(input: CreateBookingInput) {
   const booking = bookings[0]
 
   // Nauczyciel nie potrzebuje powiadomienia o lekcji, którą sam wpisał —
-  // ale gdy zrobił to za niego admin, musi się o niej dowiedzieć.
-  const teacher = await prisma.teacherProfile.findUnique({
-    where: { id: input.teacherProfileId },
-    select: { userId: true },
-  })
-  if (teacher && teacher.userId !== ctx.userId) {
+  // ale gdy zrobił to za niego admin, musi się o niej dowiedzieć. Lekcja
+  // wpisana wstecz jest wyjątkiem: nie ma w niej nic do zrobienia, więc
+  // powiadomienie o „nowej lekcji w grafiku" tylko by myliło.
+  if (!input.completed && teacher && teacher.userId !== ctx.userId) {
     // Jedno powiadomienie na serię — osiem osobnych nic by nie wniosło.
     await notify({
       type: "BOOKING_CREATED",
@@ -246,6 +314,7 @@ export async function createBooking(input: CreateBookingInput) {
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/rezerwacje")
+  revalidatePath("/dashboard/rozliczenia")
   revalidatePath("/dashboard/kalendarz")
   revalidatePath("/dashboard/uczniowie")
   revalidatePath("/dashboard/dostepnosc")
